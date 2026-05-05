@@ -35,7 +35,17 @@
         .animate-pulse-green {
             animation: pulse-shadow-green 1.5s infinite;
         }
+        /* Animasi Tangki Air / Liquid Wave */
+        @keyframes liquid-wave {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-liquid {
+            animation: liquid-wave 4s linear infinite;
+        }
     </style>
+    <!-- Library Eksternal (Chart.js / ApexCharts) -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <!-- Dark Mode Init -->
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -49,97 +59,7 @@
     <!-- Alpine JS for interactions -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Alpine Global Store (IoT State & Simulator) -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.store('iot', {
-                devices: Alpine.$persist([
-                    { id: 1, name: 'EWS 1', lokasi: 'Soekarno-Hatta', mac: '00:1B:44:11:3A:B7', tinggiInstalasi: 300, levelAir: 10.0, status: 'Aman' },
-                    { id: 2, name: 'EWS 2', lokasi: 'B. Katulampa', mac: '00:1B:44:11:3A:B8', tinggiInstalasi: 350, levelAir: 19.5, status: 'Bahaya' },
-                    { id: 3, name: 'EWS 3', lokasi: 'Sungai Brantas', mac: '00:1B:44:11:3A:B9', tinggiInstalasi: 400, levelAir: 5.2, status: 'Aman' }
-                ]),
-                history: Alpine.$persist([]),
-                notifications: Alpine.$persist([]),
 
-                init() {
-                    // Seed initial data if empty
-                    if (this.history.length === 0) {
-                        this.history.push(
-                            { id: '1x', ewsId: 2, levelAir: 19.5, status: 'Bahaya', timestamp: Date.now() - 600000 },
-                            { id: '2x', ewsId: 1, levelAir: 10.0, status: 'Aman', timestamp: Date.now() - 1200000 }
-                        );
-                    }
-                    if (this.notifications.length === 0) {
-                        this.notifications.push(
-                            { id: 'n1', ewsId: 2, text: 'Debit air EWS 2 meluap melebihi batas bahaya! Segera evakuasi.', type: 'Bahaya', isRead: false, timestamp: Date.now() - 600000 },
-                            { id: 'n2', ewsId: 1, text: 'Ancaman banjir perlahan di area Soekarno-Hatta (EWS 1).', type: 'Siaga', isRead: false, timestamp: Date.now() - 86400000 }
-                        );
-                    }
-
-                    // Simulator Realtime Data Masuk (Tiap 5 Detik)
-                    setInterval(() => {
-                        this.devices.forEach(device => {
-                            // Fluktuasi simulasi (-1.0 cm s/d +1.0 cm)
-                            let currentLevel = parseFloat(device.levelAir);
-                            let change = (Math.random() * 2) - 1.0;
-                            let newLevel = Math.max(0, Math.min(50, parseFloat((currentLevel + change).toFixed(1))));
-                            
-                            let oldStatus = device.status;
-                            let newStatus = 'Aman';
-                            if (newLevel >= 18) newStatus = 'Bahaya';
-                            else if (newLevel >= 12) newStatus = 'Siaga';
-
-                            device.levelAir = newLevel;
-                            device.status = newStatus;
-
-                            let now = Date.now();
-                            
-                            // Log to History
-                            this.history.unshift({
-                                id: Math.random().toString(36).substr(2, 9),
-                                ewsId: device.id,
-                                levelAir: newLevel,
-                                status: newStatus,
-                                timestamp: now
-                            });
-                            // Batasi agar tidak berat
-                            if (this.history.length > 250) this.history.length = 250;
-
-                            // Inject Notification jikalau status memburuk
-                            if ((newStatus === 'Bahaya' && oldStatus !== 'Bahaya') || (newStatus === 'Siaga' && oldStatus === 'Aman')) {
-                                this.notifications.unshift({
-                                    id: Math.random().toString(36).substr(2, 9),
-                                    ewsId: device.id,
-                                    text: `Peringatan ${newStatus}! Sensor ${device.name} di ${device.lokasi} mencatat level air naik ke ${newLevel}cm.`,
-                                    type: newStatus,
-                                    isRead: false,
-                                    timestamp: now
-                                });
-                            }
-                        });
-                    }, 5000);
-                },
-
-                get unreadCount() { return this.notifications.filter(n => !n.isRead).length; },
-                get countBahaya() { return this.devices.filter(d => d.status === 'Bahaya').length; },
-                get countSiaga() { return this.devices.filter(d => d.status === 'Siaga').length; },
-                get countAman() { return this.devices.filter(d => d.status === 'Aman').length; },
-                
-                formatDate(timestamp) {
-                    let d = new Date(timestamp);
-                    let pad = (n) => n.toString().padStart(2, '0');
-                    // e.g: 12 Mar 2026, 13:10 WIB
-                    let months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
-                    return `${pad(d.getDate())} ${months[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())} WIB`;
-                },
-                formatYMD(timestamp) {
-                    let d = new Date(timestamp);
-                    let pad = (n) => n.toString().padStart(2, '0');
-                    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; // 2026-03-12
-                }
-            });
-        });
-    </script>
 </head>
 <body class="bg-[#E5E5EF] dark:bg-[#1a1b24] text-[#333] dark:text-[#d1d1d6] antialiased transition-colors duration-300">
     <div class="flex h-screen overflow-hidden w-full">
@@ -296,5 +216,7 @@
             
         });
     </script>
+    
+    @stack('scripts')
 </body>
 </html>
