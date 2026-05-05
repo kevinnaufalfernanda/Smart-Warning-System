@@ -178,13 +178,13 @@
     </div>
 
     <!-- In-App Toast Notification (Bottom Right) -->
-    <div x-show="showToast" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-y-10 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-10 opacity-0" style="display: none;" class="fixed bottom-[30px] right-[30px] bg-white dark:bg-[#20212a] border-l-[4px] border-[#e02424] shadow-[0_10px_40px_rgba(224,36,36,0.2)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-[16px] p-4 z-[9999] flex items-start gap-4 max-w-sm w-full">
-        <div class="bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)] p-2 rounded-full mt-0.5 shrink-0">
-            <svg class="w-5 h-5 text-[#c81e1e] dark:text-[#e02424]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+    <div x-show="showToast" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-y-10 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-10 opacity-0" style="display: none;" class="fixed bottom-[30px] right-[30px] bg-white dark:bg-[#20212a] border-l-[4px] shadow-[0_10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-[16px] p-4 z-[9999] flex items-start gap-4 max-w-sm w-full" :class="toastBorderColor">
+        <div class="p-2 rounded-full mt-0.5 shrink-0" :class="toastIconBg">
+            <svg class="w-5 h-5" :class="toastIconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
         <div class="flex-1 pt-0.5">
-            <h4 class="text-[#e02424] font-[800] text-[15px] mb-[2px] tracking-tight">🚨 BAHAYA BANJIR! EWS 1</h4>
-            <p class="text-[13px] text-black dark:text-[#a5a5d1] font-[600] leading-snug" x-text="toastMessage">Air menyentuh level kritis!</p>
+            <h4 class="font-[800] text-[15px] mb-[2px] tracking-tight" :class="toastTitleColor" x-text="toastTitle">🚨 PERINGATAN DINI!</h4>
+            <p class="text-[13px] text-black dark:text-[#a5a5d1] font-[600] leading-snug" x-text="toastMessage"></p>
         </div>
         <button @click="showToast = false" class="text-gray-400 hover:text-black dark:hover:text-white shrink-0 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -208,12 +208,18 @@
                 terakhirUpdate: '...'
             },
             showToast: false,
+            toastTitle: '',
             toastMessage: '',
+            toastBorderColor: 'border-[#e02424]',
+            toastIconBg: 'bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)]',
+            toastIconColor: 'text-[#c81e1e] dark:text-[#e02424]',
+            toastTitleColor: 'text-[#e02424]',
             isOnline: true,
             chartInstance: null,
             chartData: [],
             tick: 0,
             lastStatus: null,
+            lastRainStatus: null,
             getColor() {
                 let status = this.device.status;
                 if (status === 'Bahaya') return '#e02424';
@@ -280,33 +286,43 @@
                             else if (jarak > 20 && jarak <= 60) this.device.status = 'Waspada';
                             else this.device.status = 'Aman';
                             
-                            // Logika Notifikasi Timbul
-                            if (this.device.status === 'Bahaya' && this.lastStatus !== 'Bahaya') {
-                                // Tampilkan In-App Toast di Pojok Kanan Bawah
-                                this.toastMessage = `Air menyentuh level kritis (${jarak}cm)! Segera cek riwayat dan berikan tindakan.`;
-                                this.showToast = true;
-                                setTimeout(() => { this.showToast = false; }, 8000); // Hilang setelah 8 dtk
-
-                                // (Opsional) Native OS Push Notification jika diizinkan & HTTPS
-                                if ('Notification' in window && Notification.permission === 'granted') {
-                                    new Notification('🚨 BAHAYA BANJIR! EWS 1', {
-                                        body: this.toastMessage,
-                                        icon: '/favicon.ico'
-                                    });
-                                }
-                            }
-                            this.lastStatus = this.device.status;
-
-                            // Perbarui Chart Data
-                            if (this.chartInstance) {
-                                this.chartData.push({ x: this.tick, y: jarak });
-                                if (this.chartData.length > 20) this.chartData.shift();
-                                this.chartInstance.updateSeries([{ data: this.chartData }]);
-                                this.tick++;
-                            }
-
                             // Ambil Cuaca (Hujan / Cerah)
                             this.device.statusHujan = data.hujan || 'Cerah';
+                            
+                            // Fungsi untuk memunculkan notif popup
+                            const triggerNotif = (title, message, colors) => {
+                                this.toastTitle = title;
+                                this.toastMessage = message;
+                                this.toastBorderColor = colors.border;
+                                this.toastIconBg = colors.iconBg;
+                                this.toastIconColor = colors.iconColor;
+                                this.toastTitleColor = colors.titleColor;
+                                this.showToast = true;
+                                setTimeout(() => { this.showToast = false; }, 8000);
+                                if ('Notification' in window && Notification.permission === 'granted') {
+                                    new Notification(title, { body: message, icon: '/favicon.ico' });
+                                }
+                            };
+
+                            // Logika Notifikasi Timbul
+                            if (this.device.status === 'Bahaya' && this.lastStatus !== 'Bahaya') {
+                                triggerNotif('🚨 BAHAYA BANJIR!', `Air menyentuh level kritis (${jarak}cm)! Cuaca: ${this.device.statusHujan}. Segera ambil tindakan.`, {
+                                    border: 'border-[#e02424]', iconBg: 'bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)]', iconColor: 'text-[#c81e1e] dark:text-[#e02424]', titleColor: 'text-[#e02424]'
+                                });
+                            } else if (this.device.status === 'Waspada' && this.lastStatus !== 'Waspada' && this.lastStatus !== 'Bahaya') {
+                                triggerNotif('⚠️ SIAGA BANJIR!', `Air memasuki level waspada (${jarak}cm). Cuaca: ${this.device.statusHujan}. Harap berhati-hati.`, {
+                                    border: 'border-[#f59e0b]', iconBg: 'bg-[#fef3c7] dark:bg-[rgba(245,158,11,0.15)]', iconColor: 'text-[#d97706] dark:text-[#f59e0b]', titleColor: 'text-[#f59e0b]'
+                                });
+                            } else if (this.device.statusHujan === 'Hujan' && this.lastRainStatus !== 'Hujan') {
+                                triggerNotif('🌧️ PERINGATAN CUACA!', `Terdeteksi hujan turun. Jarak Air: ${jarak}cm. Pantau terus ketinggian air.`, {
+                                    border: 'border-[#3B82F6]', iconBg: 'bg-[#dbeafe] dark:bg-[rgba(59,130,246,0.15)]', iconColor: 'text-[#2563eb] dark:text-[#3B82F6]', titleColor: 'text-[#3B82F6]'
+                                });
+                            }
+                            
+                            this.lastStatus = this.device.status;
+                            this.lastRainStatus = this.device.statusHujan;
+
+                            // Perbarui Chart Data
                             
                             // Waktu Update
                             let d = new Date();
