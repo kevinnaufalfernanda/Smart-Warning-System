@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - FloodGuard</title>
+    <title>Daftar - FloodGuard</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=poppins:300,400,500,600,700&display=swap" rel="stylesheet" />
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
@@ -14,7 +14,6 @@
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #E5E5EF; }
         
-        /* Checkbox kustom agar centangnya dipaksa putih (bukan hitam bawaan chrome) */
         .custom-checkbox {
             appearance: none;
             -webkit-appearance: none;
@@ -39,8 +38,6 @@
             transform: rotate(45deg);
             margin-bottom: 2px;
         }
-
-        /* Fix Chrome Autofill 'Belang' issue (memaksa bg menjadi putih) */
         input:-webkit-autofill,
         input:-webkit-autofill:hover, 
         input:-webkit-autofill:focus, 
@@ -50,21 +47,15 @@
         }
     </style>
 </head>
-<body class="bg-[#E5E5EF] text-[#333] antialiased flex items-center justify-center min-h-screen relative overflow-hidden">
+<body class="bg-[#E5E5EF] text-[#333] antialiased flex items-center justify-center min-h-screen relative overflow-hidden py-8">
     
     <div class="w-full max-w-[420px] bg-[#F3F3F3] rounded-[32px] p-[48px] mx-4 z-10 relative overflow-hidden shadow-[0_8px_40px_rgba(146,146,197,0.12)]">
         
         <!-- Header Logo -->
-        <div class="text-center mb-[48px] mt-[8px]">
+        <div class="text-center mb-[32px] mt-[8px]">
             <h1 class="text-[38px] font-light text-[#9292C5] tracking-wide mb-[6px]" style="font-weight: 300;">FloodGuard</h1>
-            <p class="text-[#9292C5] font-normal text-[14px] opacity-70">IoT Smart Flood Warning System</p>
+            <p class="text-[#9292C5] font-normal text-[14px] opacity-70">Daftar Akun Baru</p>
         </div>
-
-        @if (session('success'))
-            <div class="bg-green-100 text-green-700 p-3 rounded-xl mb-4 text-[13px] text-center font-medium">
-                {{ session('success') }}
-            </div>
-        @endif
 
         @if ($errors->any())
             <div class="bg-red-100 text-red-600 p-3 rounded-xl mb-4 text-[13px]">
@@ -76,43 +67,40 @@
             </div>
         @endif
 
-        <form action="{{ route('login.process') }}" method="POST" class="flex flex-col gap-[24px] text-left">
+        <form action="{{ route('register.process') }}" method="POST" class="flex flex-col gap-[24px] text-left">
             @csrf
+            
+            <!-- Input Nama -->
+            <div class="flex flex-col gap-[8px]">
+                <label class="text-[13px] font-semibold text-[#9292C5] flex items-center gap-[8px]">
+                    Nama Lengkap
+                </label>
+                <input type="text" name="name" placeholder="Nama Warga" value="{{ old('name') }}" required class="w-full bg-[#E5E5EF] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-black outline-none placeholder-[#999] border-none focus:ring-2 focus:ring-[#9292C5] transition-all">
+            </div>
+
             <!-- Input Email -->
             <div class="flex flex-col gap-[8px]">
                 <label class="text-[13px] font-semibold text-[#9292C5] flex items-center gap-[8px]">
-                    <svg class="w-[16px] h-[16px]" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                     Email
                 </label>
-                <input type="email" name="email" value="{{ old('email') }}" placeholder="admin@test.com" required class="w-full bg-[#E5E5EF] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-black outline-none placeholder-[#999] border-none focus:ring-2 focus:ring-[#9292C5] transition-all">
+                <input type="email" name="email" placeholder="email@warga.com" value="{{ old('email') }}" required class="w-full bg-[#E5E5EF] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-black outline-none placeholder-[#999] border-none focus:ring-2 focus:ring-[#9292C5] transition-all">
             </div>
 
             <!-- Input Password -->
             <div class="flex flex-col gap-[8px]">
                 <label class="text-[13px] font-semibold text-[#9292C5] flex items-center gap-[8px]">
-                    <svg class="w-[16px] h-[16px]" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                     Password
                 </label>
-                <input type="password" name="password" placeholder="••••••••••••" required class="w-full bg-[#E5E5EF] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-black outline-none placeholder-[#999] border-none focus:ring-2 focus:ring-[#9292C5] transition-all">
-            </div>
-
-            <!-- Ingat saya -->
-            <div class="flex items-center gap-[8px]">
-                <input type="checkbox" name="remember" checked class="custom-checkbox w-[18px] h-[18px] shrink-0">
-                <span class="text-[13px] font-medium text-[#9292C5]">Ingat saya</span>
+                <input type="password" name="password" placeholder="Minimal 8 karakter" required class="w-full bg-[#E5E5EF] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-black outline-none placeholder-[#999] border-none focus:ring-2 focus:ring-[#9292C5] transition-all">
             </div>
 
             <!-- Submit -->
             <div class="text-center mt-[8px]">
                 <button type="submit" class="w-[70%] bg-[#9292C5] text-white py-[14px] rounded-[14px] font-bold text-[15px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_20px_rgba(146,146,197,0.4)]">
-                    Masuk
+                    Daftar
                 </button>
                 <p class="text-[13px] font-medium text-[#999] mt-[16px] flex items-center justify-center gap-[6px]">
-                    Belum punya akun? <a href="{{ route('register') }}" class="text-[#9292C5] hover:underline font-semibold">Daftar</a>
-                </p>
-                <p class="text-[12px] font-medium text-[#999] mt-[8px] flex items-center justify-center gap-[6px]">
-                    <span class="w-[8px] h-[8px] bg-[#333] rounded-full inline-block"></span>
-                    Sistem Monitoring Banjir IoT v1.0
+                    Sudah punya akun? <a href="{{ route('login') }}" class="text-[#9292C5] hover:underline font-semibold">Masuk</a>
                 </p>
             </div>
         </form>

@@ -6,75 +6,109 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Services\NotificationService;
 
-Route::get('/', function () {
-    return view('login');
+use App\Http\Controllers\AuthController;
+use App\Models\SensorLog;
+use App\Models\Device;
+use App\Models\AlertHistory;
+use App\Models\ErrorLog;
+use App\Models\Threshold;
+use App\Models\NotificationLog;
+
+Route::get('/setup-db', function() {
+    DB::statement("
+        CREATE TABLE IF NOT EXISTS `users` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `name` varchar(100) NOT NULL,
+          `email` varchar(100) NOT NULL,
+          `password` varchar(255) NOT NULL,
+          `remember_token` varchar(100) DEFAULT NULL,
+          `role` enum('Admin','Petugas','Warga') NOT NULL DEFAULT 'Warga',
+          `phone_number` varchar(20) DEFAULT NULL,
+          `created_at` timestamp NULL DEFAULT NULL,
+          `updated_at` timestamp NULL DEFAULT NULL,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `email_unik` (`email`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    return "Tabel users berhasil dibuat! Silakan kembali ke halaman register.";
 });
 
-Route::get('/dashboard', function () {
-    $totalData = DB::table('sensor_logs')->count();
-    $totalPeringatan = DB::table('sensor_logs')
+Route::middleware('guest')->group(function () {
+    Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'processLogin'])->name('login.process');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'processRegister'])->name('register.process');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/dashboard', function () {
+        $totalData = SensorLog::count();
+        $totalPeringatan = SensorLog::whereIn('flood_status', ['BAHAYA', 'WASPADA'])->count();
+        $notifikasi = AlertHistory::orderBy('id', 'desc')->take(5)->get();
+        
+        $totalPerangkat = Device::count() ?: 1; // Fallback jika belum ada device
+        
+        return view('dashboard', [
+            'totalData' => $totalData,
+            'totalPeringatan' => $totalPeringatan,
+            'totalPerangkat' => $totalPerangkat,
+            'notifikasi' => $notifikasi
+        ]);
+    })->name('dashboard');
+
+    Route::get('/peringatan', function () {
+        $peringatan = SensorLog::with('device.station')
                         ->whereIn('flood_status', ['BAHAYA', 'WASPADA'])
-                        ->count();
-    $notifikasi = DB::table('alert_history')->orderBy('id', 'desc')->take(5)->get();
-    
-    // Asumsi 1 ESP32 untuk sekarang, atau hitung dari devices
-    $totalPerangkat = DB::table('devices')->count();
-    if ($totalPerangkat == 0) $totalPerangkat = 1; // Fallback jika belum ada device
-    
-    return view('dashboard', [
-        'totalData' => $totalData,
-        'totalPeringatan' => $totalPeringatan,
-        'totalPerangkat' => $totalPerangkat,
-        'notifikasi' => $notifikasi
-    ]);
-})->name('dashboard');
+                        ->orderBy('id', 'desc')
+                        ->take(200)
+                        ->get();
+        
+        $totalBahaya = SensorLog::where('flood_status', 'BAHAYA')->count();
+        $totalSiaga = SensorLog::where('flood_status', 'WASPADA')->count();
+        
+        return view('peringatan', [
+            'data' => $peringatan,
+            'totalBahaya' => $totalBahaya,
+            'totalSiaga' => $totalSiaga
+        ]);
+    })->name('peringatan');
 
-Route::get('/peringatan', function () {
-    $peringatan = DB::table('sensor_logs')
-                    ->whereIn('flood_status', ['BAHAYA', 'WASPADA'])
-                    ->orderBy('id', 'desc')
-                    ->take(200)
-                    ->get();
-    
-    $totalBahaya = DB::table('sensor_logs')->where('flood_status', 'BAHAYA')->count();
-    $totalSiaga = DB::table('sensor_logs')->where('flood_status', 'WASPADA')->count();
-    
-    return view('peringatan', [
-        'data' => $peringatan,
-        'totalBahaya' => $totalBahaya,
-        'totalSiaga' => $totalSiaga
-    ]);
-})->name('peringatan');
+    Route::get('/perangkat', function () {
+        $errorLogs = [];
+        try {
+            $errorLogs = ErrorLog::with('device.station')->orderBy('id', 'desc')->take(20)->get();
+        } catch (\Exception $e) {}
+        
+        return view('perangkat', ['errorLogs' => $errorLogs]);
+    })->name('perangkat');
 
-Route::get('/perangkat', function () {
-    return view('perangkat');
-})->name('perangkat');
+    Route::get('/riwayat', function () {
+        $riwayat = SensorLog::with('device.station')->orderBy('id', 'desc')->take(200)->get();
+        
+        $totalData = SensorLog::count();
+        
+        $avgLevel = SensorLog::avg('distance_cm') ?? 0;
+        $avgLevel = round($avgLevel);
+        
+        $highestLevel = SensorLog::max('distance_cm') ?? 0;
+        
+        return view('riwayat', [
+            'data' => $riwayat,
+            'totalData' => $totalData,
+            'avgLevel' => $avgLevel,
+            'highestLevel' => $highestLevel
+        ]);
+    })->name('riwayat');
 
-Route::get('/riwayat', function () {
-    $riwayat = DB::table('sensor_logs')->orderBy('id', 'desc')->take(200)->get();
-    
-    $totalData = DB::table('sensor_logs')->count();
-    
-    $avgLevel = DB::table('sensor_logs')->avg('distance_cm');
-    $avgLevel = $avgLevel ? round($avgLevel) : 0;
-    
-    $highestLevel = DB::table('sensor_logs')->max('distance_cm');
-    $highestLevel = $highestLevel ? $highestLevel : 0;
-    
-    return view('riwayat', [
-        'data' => $riwayat,
-        'totalData' => $totalData,
-        'avgLevel' => $avgLevel,
-        'highestLevel' => $highestLevel
-    ]);
-})->name('riwayat');
-
-Route::get('/pengaturan', function () {
-    return view('pengaturan');
-})->name('pengaturan');
+    Route::get('/pengaturan', function () {
+        return view('pengaturan');
+    })->name('pengaturan');
+});
 
 Route::get('/data-sensor/latest', function () {
-    $data = DB::table('sensor_logs')->latest('id')->first();
+    $data = SensorLog::latest('id')->first();
     
     $jarak = $data ? $data->distance_cm : 0;
     // flood_condition contains 'HUJAN' or 'CERAH'
@@ -109,8 +143,25 @@ Route::post('/api/trigger-notif', function (Request $request) {
     if ($jarak === null) $jarak = $request->input('jarak', $request->query('jarak', 0));
     if ($hujan === null) $hujan = $request->input('hujan', $request->query('hujan', 4095));
 
+    // Validasi Anomali Data (Error Logging)
+    if ($jarak < 0 || $jarak > 400) {
+        try {
+            ErrorLog::create([
+                'device_id' => null, // or resolve device first, but for simplicity
+                'error_type' => 'Sensor Anomaly',
+                'message' => "Jarak tidak valid dibaca oleh sensor: {$jarak} cm. Harus di antara 0-400 cm.",
+                'created_at' => now()
+            ]);
+        } catch (\Exception $e) {}
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Data ditolak: Jarak tidak valid (error logged).'
+        ], 400);
+    }
+
     // 1. Validasi Device
-    $device = DB::table('devices')->where('mac_address', $macAddress)->first();
+    $device = Device::where('mac_address', $macAddress)->first();
     $deviceId = $device ? $device->id : null;
     $stationId = $device ? $device->station_id : null;
     
@@ -119,7 +170,7 @@ Route::post('/api/trigger-notif', function (Request $request) {
     $statusJarak = 'AMAN';
     
     // Ambil threshold dari DB jika ada
-    $thresholds = DB::table('thresholds')->where('station_id', $stationId)->get();
+    $thresholds = Threshold::where('station_id', $stationId)->get();
     
     if ($thresholds->isNotEmpty()) {
         foreach ($thresholds as $t) {
@@ -139,7 +190,7 @@ Route::post('/api/trigger-notif', function (Request $request) {
     }
     
     // 3. Insert ke sensor_logs
-    $logId = DB::table('sensor_logs')->insertGetId([
+    $log = SensorLog::create([
         'device_id' => $deviceId,
         'distance_cm' => $jarak,
         'water_level_cm' => 0,
@@ -154,10 +205,7 @@ Route::post('/api/trigger-notif', function (Request $request) {
     
     if ($kondisiDarurat) {
         // Cek Anti-Spam (Cooldown): Kapan terakhir kali stasiun ini mengirim notifikasi?
-        $lastAlert = DB::table('alert_history')
-            ->where('station_id', $stationId)
-            ->latest('id')
-            ->first();
+        $lastAlert = AlertHistory::where('station_id', $stationId)->latest('id')->first();
             
         $bolehKirim = true;
         if ($lastAlert) {
@@ -178,7 +226,7 @@ Route::post('/api/trigger-notif', function (Request $request) {
             $pesanNotif .= "Harap segera ambil tindakan!";
             
             // Catat ke alert_history
-            $alertId = DB::table('alert_history')->insertGetId([
+            $alert = AlertHistory::create([
                 'station_id' => $stationId,
                 'alert_level' => $statusJarak,
                 'message' => $pesanNotif,
@@ -191,11 +239,19 @@ Route::post('/api/trigger-notif', function (Request $request) {
                 $notifStatus = 'Sent';
             } catch (\Exception $e) {
                 $notifStatus = 'Failed';
+                try {
+                    ErrorLog::create([
+                        'device_id' => $deviceId,
+                        'error_type' => 'Telegram Notification Failed',
+                        'message' => $e->getMessage(),
+                        'created_at' => now()
+                    ]);
+                } catch (\Exception $dbEx) {}
             }
             
             // Catat ke notification_logs (HANYA TELEGRAM)
-            DB::table('notification_logs')->insert([
-                'alert_id' => $alertId,
+            NotificationLog::create([
+                'alert_id' => $alert->id,
                 'recipient' => 'Telegram Group',
                 'platform' => 'Telegram',
                 'status' => $notifStatus,

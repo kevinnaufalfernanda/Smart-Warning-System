@@ -130,16 +130,19 @@
             <!-- Profile -->
             <div class="px-[24px] py-[28px] border-t border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] flex items-center justify-between mx-[16px] mt-4 transition-colors">
                 <div class="flex items-center gap-[12px]">
-                    <div class="w-[42px] h-[42px] bg-[#9292C5] text-[#F3F3F3] flex items-center justify-center font-bold text-[18px] rounded-[10px] shrink-0">A</div>
-                    <div>
-                        <p class="text-[15px] font-bold text-[#9292C5] dark:text-[#a5a5d1] leading-tight mb-0.5">Admin</p>
-                        <p class="text-[12px] text-[#9292C5] dark:text-[#a5a5d1] font-medium opacity-70">Administrator</p>
+                    <div class="w-[42px] h-[42px] bg-[#9292C5] text-[#F3F3F3] flex items-center justify-center font-bold text-[18px] rounded-[10px] shrink-0 uppercase">{{ substr(Auth::user()->name ?? 'A', 0, 1) }}</div>
+                    <div class="w-[100px] overflow-hidden">
+                        <p class="text-[15px] font-bold text-[#9292C5] dark:text-[#a5a5d1] leading-tight mb-0.5 truncate" title="{{ Auth::user()->name ?? 'Admin' }}">{{ Auth::user()->name ?? 'Admin' }}</p>
+                        <p class="text-[12px] text-[#9292C5] dark:text-[#a5a5d1] font-medium opacity-70">Warga</p>
                     </div>
                 </div>
                 <!-- Logout icon -->
-                <a href="/" class="text-[#9292C5] dark:text-[#a5a5d1] hover:text-[#9292C5] transition-colors ml-2 opacity-70 hover:opacity-100">
-                    <svg class="w-[20px] h-[20px]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3H9c-1.1 0-2 .9-2 2v3h2V5h11v14H9v-3H7v3c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="text-[#9292C5] dark:text-[#a5a5d1] hover:text-[#e02424] transition-colors ml-2 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-none p-0">
+                        <svg class="w-[20px] h-[20px]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3H9c-1.1 0-2 .9-2 2v3h2V5h11v14H9v-3H7v3c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                    </button>
+                </form>
             </div>
         </aside>
 

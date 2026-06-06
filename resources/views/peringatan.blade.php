@@ -15,25 +15,25 @@
     }
 }" class="flex flex-col h-full">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-[24px] mb-[24px]">
-        <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] rounded-tl-[24px] rounded-br-[24px] shadow-sm flex flex-col justify-between h-[140px] transition-colors duration-300">
-            <p class="text-[22px] font-bold tracking-tight text-black dark:text-white">Belum dibaca</p>
-            <p class="text-[48px] font-[800] text-black dark:text-[#9292C5] text-right" x-text="unreadCount">{{ count($data) }}</p>
+        <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[140px] transition-colors duration-300">
+            <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Belum dibaca</p>
+            <p class="text-[56px] font-[900] text-black dark:text-[#9292C5] text-right leading-none" x-text="unreadCount">{{ count($data) }}</p>
         </div>
         <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[140px] transition-colors duration-300">
-            <p class="text-[22px] font-bold tracking-tight text-black dark:text-white">Total Bahaya</p>
-            <p class="text-[48px] font-[800] text-black dark:text-[#e02424] text-right">{{ $totalBahaya }}</p>
+            <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Total Bahaya</p>
+            <p class="text-[56px] font-[900] text-black dark:text-[#e02424] text-right leading-none">{{ $totalBahaya }}</p>
         </div>
         <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[140px] transition-colors duration-300">
-            <p class="text-[22px] font-bold tracking-tight text-black dark:text-white">Total Siaga</p>
-            <p class="text-[48px] font-[800] text-black dark:text-[#D8C726] text-right">{{ $totalSiaga }}</p>
+            <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Total Siaga</p>
+            <p class="text-[56px] font-[900] text-black dark:text-[#D8C726] text-right leading-none">{{ $totalSiaga }}</p>
         </div>
     </div>
 
     <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex-1 flex flex-col overflow-hidden min-h-[350px] transition-colors duration-300">
         <div class="flex gap-4 mb-[24px]">
-            <!-- Dropdown Tipe Peringatan -->
+            <!-- Dropdown Tipe Peringatan (outlined style) -->
             <div x-data="{ dropdownOpen: false }" class="relative z-20">
-                <button @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="bg-[#9292C5] dark:bg-[rgba(255,255,255,0.05)] text-white dark:text-[#a5a5d1] font-[700] px-[20px] py-[6px] rounded-[10px] text-[13px] border border-transparent dark:border-[rgba(255,255,255,0.05)] hover:bg-[#7b7bb2] hover:text-white transition-colors flex items-center justify-between gap-2 min-w-[140px]">
+                <button @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="bg-white dark:bg-[rgba(255,255,255,0.05)] text-[#555] dark:text-[#a5a5d1] font-[700] px-[20px] py-[6px] rounded-[10px] text-[13px] border border-[#d0d0e0] dark:border-[rgba(255,255,255,0.1)] hover:bg-[#f0f0f5] dark:hover:bg-[rgba(255,255,255,0.08)] transition-colors flex items-center justify-between gap-2 min-w-[140px]">
                     <span x-text="filterTipe"></span>
                     <svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
@@ -44,9 +44,9 @@
                 </div>
             </div>
 
-            <!-- Dropdown Status Baca -->
+            <!-- Dropdown Status Baca (outlined style) -->
             <div x-data="{ dropdownOpen: false }" class="relative z-20">
-                <button @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="bg-[#9292C5] dark:bg-[rgba(255,255,255,0.05)] text-white dark:text-[#a5a5d1] font-[700] px-[20px] py-[6px] rounded-[10px] text-[13px] border border-transparent dark:border-[rgba(255,255,255,0.05)] hover:bg-[#7b7bb2] hover:text-white transition-colors flex items-center justify-between gap-2 min-w-[160px]">
+                <button @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="bg-white dark:bg-[rgba(255,255,255,0.05)] text-[#555] dark:text-[#a5a5d1] font-[700] px-[20px] py-[6px] rounded-[10px] text-[13px] border border-[#d0d0e0] dark:border-[rgba(255,255,255,0.1)] hover:bg-[#f0f0f5] dark:hover:bg-[rgba(255,255,255,0.08)] transition-colors flex items-center justify-between gap-2 min-w-[160px]">
                     <span x-text="filterStatusBaca"></span>
                     <svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
@@ -63,9 +63,9 @@
                 <thead class="sticky top-0 bg-white dark:bg-[#1a1b24] border-b-[2px] border-[#E5E5EF] dark:border-[#2a2b36] z-10 text-[13px] font-[800] text-black dark:text-white transition-colors duration-300">
                     <tr>
                         <th class="py-[16px] px-[20px] w-[12%]">Tipe</th>
-                        <th class="py-[16px] px-[20px] w-[48%]">Peringatan</th>
+                        <th class="py-[16px] px-[20px] w-[40%]">Peringatan</th>
                         <th class="py-[16px] px-[20px] text-center w-[15%]">Level Air</th>
-                        <th class="py-[16px] px-[20px] text-center w-[15%]">Waktu</th>
+                        <th class="py-[16px] px-[20px] text-center w-[18%]">Waktu</th>
                         <th class="py-[16px] px-[20px] text-center w-[10%]">Status</th>
                     </tr>
                 </thead>
@@ -78,30 +78,27 @@
                     
                     // Timezone correction
                     $dateObj = \Carbon\Carbon::parse($row->created_at)->setTimezone('Asia/Jakarta');
-                    $dateStr = $dateObj->format('H:i') . " WIB";
-                    $dateYmd = $dateObj->format('Y-m-d');
-                    $timestamp = $dateObj->timestamp;
+                    $dateStr = $dateObj->format('H.i');
+                    $statusLabel = $statusType === 'Waspada' ? 'Siaga' : $statusType;
+                    
+                    $msgText = "Ancaman Banjir di area Soekar...";
+                    if ($statusType === 'Bahaya') $msgText = "Ancaman Banjir di area Soekar...";
+                    elseif ($statusType === 'Waspada') $msgText = "Ancaman Banjir di area Soekar...";
+                    else $msgText = "Status normal di area sensor";
                 @endphp
                 <tbody x-data="{ open: false, isRead: false }" x-show="checkFilter('{{ $statusType }}', isRead)" x-transition.opacity class="border-b border-[#E5E5EF] dark:border-[#2a2b36]">
-                    <tr @click="open = !open; if(!isRead){ isRead = true; unreadCount-- }" class="cursor-pointer bg-white dark:bg-transparent hover:bg-[#F9F9FB] dark:hover:bg-[rgba(255,255,255,0.02)] text-black dark:text-[#d1d1d8] font-[600] transition-colors duration-300">
-                        <td class="py-[16px] px-[20px]">
-                            @if($statusType === 'Bahaya')
-                                <span class="px-2.5 py-1 bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)] text-[#c81e1e] dark:text-[#f8b4b4] rounded-full text-[11px] font-bold uppercase tracking-wider">Bahaya</span>
-                            @elseif($statusType === 'Waspada')
-                                <span class="px-2.5 py-1 bg-[#fdf6b2] dark:bg-[rgba(216,199,38,0.15)] text-[#c27803] dark:text-[#D8C726] rounded-full text-[11px] font-bold uppercase tracking-wider">Waspada</span>
-                            @else
-                                <span class="px-2.5 py-1 bg-[#e2f1e2] dark:bg-[rgba(107,191,107,0.15)] text-[#15803d] dark:text-[#6BBF6B] rounded-full text-[11px] font-bold uppercase tracking-wider">Aman</span>
-                            @endif
+                    <tr @click="open = !open; if(!isRead){ isRead = true; unreadCount-- }" class="cursor-pointer bg-white dark:bg-transparent hover:bg-[#F9F9FB] dark:hover:bg-[rgba(255,255,255,0.02)] text-black dark:text-[#d1d1d8] font-[500] transition-colors duration-300">
+                        <td class="py-[14px] px-[20px]">
+                            <span class="text-[13px] font-[600]">{{ $statusLabel }}</span>
                         </td>
-                        <td class="py-[16px] px-[20px] group">
-                            <span :class="isRead ? '' : 'font-[800]'" class="truncate block w-full">Peringatan Sensor EWS: Level terdeteksi {{ $jarakVal }} cm.</span>
-                            <span class="text-[11px] font-normal text-[#9292C5] mt-1 block">Klik untuk melihat detail &rarr;</span>
+                        <td class="py-[14px] px-[20px]">
+                            <span :class="isRead ? '' : 'font-[700]'" class="truncate block w-full text-[13px]">{{ $msgText }}</span>
                         </td>
-                        <td class="py-[16px] px-[20px] text-center font-bold @if($statusType === 'Bahaya') text-[#c81e1e] @elseif($statusType === 'Waspada') text-[#c27803] dark:text-[#D8C726] @else text-[#15803d] dark:text-[#6BBF6B] @endif">{{ $jarakVal }}cm</td>
-                        <td class="py-[16px] px-[20px] text-center">{{ $dateStr }}</td>
-                        <td class="py-[16px] px-[20px] text-center">
-                            <div :class="isRead ? 'bg-[#E5E5EF] dark:bg-[#2a2b36]' : 'bg-[#e2f1e2] dark:bg-[rgba(107,191,107,0.2)]'" class="inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors duration-300" title="Status">
-                                <div :class="isRead ? 'bg-[#C8C8E1] dark:bg-[#4b4b57] shadow-none' : 'bg-[#6BBF6B] shadow-[0_0_8px_#6bbf6b]'" class="w-3 h-3 rounded-full transition-colors duration-300"></div>
+                        <td class="py-[14px] px-[20px] text-center font-bold text-[13px]">{{ $jarakVal }}cm</td>
+                        <td class="py-[14px] px-[20px] text-center text-[13px]">{{ $dateStr }}</td>
+                        <td class="py-[14px] px-[20px] text-center">
+                            <div class="inline-flex items-center justify-center">
+                                <div :class="isRead ? 'bg-[#C8C8E1] dark:bg-[#4b4b57]' : 'bg-[#6BBF6B] shadow-[0_0_6px_#6bbf6b]'" class="w-3 h-3 rounded-full transition-colors duration-300"></div>
                             </div>
                         </td>
                     </tr>
