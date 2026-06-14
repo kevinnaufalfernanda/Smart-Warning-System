@@ -9,7 +9,7 @@ class Station extends Model
 {
     use HasFactory;
 
-    protected $table = 'monitoring_stations';
+    protected $table = 'stations';
     protected $guarded = [];
 
     public function devices()

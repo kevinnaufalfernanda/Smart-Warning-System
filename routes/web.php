@@ -81,8 +81,32 @@ Route::middleware('auth')->group(function () {
             $errorLogs = ErrorLog::with('device.station')->orderBy('id', 'desc')->take(20)->get();
         } catch (\Exception $e) {}
         
-        return view('perangkat', ['errorLogs' => $errorLogs]);
+        $devices = \App\Models\Device::with('station')->get();
+        
+        return view('perangkat', ['errorLogs' => $errorLogs, 'devices' => $devices]);
     })->name('perangkat');
+
+    Route::post('/perangkat', function (Request $request) {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'mac_address' => 'required|string|max:255|unique:devices,mac_address',
+        ]);
+
+        $station = \App\Models\Station::create([
+            'name' => $request->name,
+            'location' => $request->location,
+        ]);
+
+        \App\Models\Device::create([
+            'station_id' => $station->id,
+            'name' => $request->name,
+            'mac_address' => $request->mac_address,
+            'is_active' => true,
+        ]);
+
+        return back()->with('success', 'Perangkat berhasil ditambahkan!');
+    })->name('perangkat.store');
 
     Route::get('/riwayat', function () {
         $riwayat = SensorLog::with('device.station')->orderBy('id', 'desc')->take(200)->get();
@@ -103,8 +127,35 @@ Route::middleware('auth')->group(function () {
     })->name('riwayat');
 
     Route::get('/pengaturan', function () {
-        return view('pengaturan');
+        $stations = \App\Models\Station::with('thresholds')->get();
+        return view('pengaturan', ['stations' => $stations]);
     })->name('pengaturan');
+
+    Route::post('/pengaturan/threshold', function (Request $request) {
+        $request->validate([
+            'station_id' => 'required|exists:stations,id',
+            'batas_aman' => 'required|numeric',
+            'batas_waspada' => 'required|numeric',
+            'batas_bahaya' => 'required|numeric',
+        ]);
+        
+        $stationId = $request->station_id;
+        $aman = $request->batas_aman;
+        $waspada = $request->batas_waspada;
+        $bahaya = $request->batas_bahaya;
+        
+        if (!($bahaya <= $waspada && $waspada <= $aman)) {
+            return back()->with('error', 'Konfigurasi tidak valid. Pastikan Bahaya <= Waspada <= Aman.');
+        }
+
+        \App\Models\Threshold::where('station_id', $stationId)->delete();
+        
+        \App\Models\Threshold::create(['station_id' => $stationId, 'level_label' => 'BAHAYA', 'water_min_cm' => 0, 'water_max_cm' => $bahaya]);
+        \App\Models\Threshold::create(['station_id' => $stationId, 'level_label' => 'WASPADA', 'water_min_cm' => $bahaya + 0.01, 'water_max_cm' => $waspada]);
+        \App\Models\Threshold::create(['station_id' => $stationId, 'level_label' => 'AMAN', 'water_min_cm' => $waspada + 0.01, 'water_max_cm' => 400]);
+
+        return back()->with('success', 'Threshold berhasil diperbarui!');
+    })->name('pengaturan.threshold');
 });
 
 Route::get('/data-sensor/latest', function () {
@@ -128,7 +179,8 @@ Route::get('/data-sensor/latest', function () {
         'jarak' => $jarak,
         'hujan' => $kondisiHujan,
         'waktu' => $data ? $data->created_at : null,
-        'raw_pesan' => $rawPesan
+        'raw_pesan' => $rawPesan,
+        'status' => $data ? ucfirst(strtolower($data->flood_status)) : 'Aman'
     ]);
 });
 
@@ -162,8 +214,23 @@ Route::post('/api/trigger-notif', function (Request $request) {
 
     // 1. Validasi Device
     $device = Device::where('mac_address', $macAddress)->first();
-    $deviceId = $device ? $device->id : null;
-    $stationId = $device ? $device->station_id : null;
+    
+    // Auto-register jika device belum ada di database
+    if (!$device) {
+        $station = \App\Models\Station::firstOrCreate(
+            ['name' => 'Stasiun EWS Baru'], 
+            ['location' => 'Belum Diatur']
+        );
+        $device = \App\Models\Device::create([
+            'mac_address' => $macAddress,
+            'name' => 'EWS Baru (' . substr($macAddress, -5) . ')',
+            'station_id' => $station->id,
+            'is_active' => true
+        ]);
+    }
+
+    $deviceId = $device->id;
+    $stationId = $device->station_id;
     
     // 2. Evaluasi Ambang Batas (Thresholds)
     $kondisiHujan = ($hujan < 1400) ? 'HUJAN' : 'CERAH';
@@ -180,9 +247,9 @@ Route::post('/api/trigger-notif', function (Request $request) {
         }
     } else {
         // Fallback default rules
-        if ($jarak <= 20) {
+        if ($jarak <= 8) {
             $statusJarak = 'BAHAYA';
-        } elseif ($jarak > 20 && $jarak <= 60) {
+        } elseif ($jarak > 8 && $jarak <= 12) {
             $statusJarak = 'WASPADA';
         } else {
             $statusJarak = 'AMAN';

@@ -2,21 +2,47 @@
 @section('title', 'Pengaturan')
 
 @section('content')
-<div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm mb-[24px] transition-colors duration-300">
+@php
+    $selectedStation = $stations->first();
+    // Default values
+    $amanVal = 12;
+    $waspadaVal = 12;
+    $bahayaVal = 8;
+    
+    if ($selectedStation && $selectedStation->thresholds->count() > 0) {
+        $bahaya = $selectedStation->thresholds->where('level_label', 'BAHAYA')->first();
+        $waspada = $selectedStation->thresholds->where('level_label', 'WASPADA')->first();
+        if ($bahaya) $bahayaVal = $bahaya->water_max_cm;
+        if ($waspada) $waspadaVal = $waspada->water_max_cm;
+        // Aman's threshold isn't really needed for input since it's just > waspadaVal
+        $amanVal = $waspadaVal; 
+    }
+@endphp
+
+<form action="{{ route('pengaturan.threshold') }}" method="POST" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm mb-[24px] transition-colors duration-300">
+    @csrf
+    
+    @if(session('success'))
+    <div class="mb-4 bg-[#e2f1e2] dark:bg-[#344034] text-[#6BBF6B] px-4 py-3 rounded-[12px] font-bold text-[14px]">
+        {{ session('success') }}
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="mb-4 bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)] text-[#e02424] px-4 py-3 rounded-[12px] font-bold text-[14px]">
+        {{ session('error') }}
+    </div>
+    @endif
+
     <!-- Header with EWS selector -->
     <div class="flex justify-between items-center mb-[24px]">
         <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white">Konfigurasi Threshold</h3>
         <!-- EWS Dropdown Selector -->
-        <div x-data="{ open: false }" class="relative z-20">
-            <button @click="open = !open" @click.outside="open = false" class="bg-[#9292C5] text-white px-[16px] py-[6px] rounded-[10px] text-[13px] font-bold flex items-center gap-2 hover:bg-[#8585b8] transition-colors cursor-pointer shadow-sm">
-                <span>EWS 1</span>
-                <svg class="w-3.5 h-3.5 transition-transform duration-300" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-            </button>
-            <div x-show="open" x-transition style="display: none;" class="absolute right-0 mt-2 w-[140px] bg-white dark:bg-[#2e2f3a] rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] py-2 z-50">
-                <button @click="open = false" class="w-full text-left px-4 py-2 text-[13px] font-semibold text-black dark:text-white hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.05)] transition-colors">EWS 1</button>
-                <button @click="open = false" class="w-full text-left px-4 py-2 text-[13px] font-semibold text-black dark:text-white hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.05)] transition-colors">EWS 2</button>
-                <button @click="open = false" class="w-full text-left px-4 py-2 text-[13px] font-semibold text-black dark:text-white hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.05)] transition-colors">EWS 3</button>
-            </div>
+        <div class="relative z-20">
+            <select name="station_id" class="bg-[#9292C5] text-white px-[16px] py-[6px] rounded-[10px] text-[13px] font-bold flex items-center gap-2 hover:bg-[#8585b8] transition-colors cursor-pointer shadow-sm outline-none border-none">
+                @foreach($stations as $station)
+                    <option value="{{ $station->id }}">{{ $station->name }}</option>
+                @endforeach
+            </select>
         </div>
     </div>
     
@@ -39,30 +65,36 @@
             <h4 class="font-[800] text-[#6BBF6B] mb-1">Aman</h4>
             <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak > X cm</p>
             <div class="flex overflow-hidden rounded-[8px] bg-[#E5E5EF]/60 dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-                <input type="number" value="10" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <input type="number" name="batas_aman" value="{{ $amanVal }}" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
                 <div class="bg-[#C8C8E1] dark:bg-[rgba(255,255,255,0.05)] px-4 py-[10px] text-black dark:text-white font-[800] text-[14px]">cm</div>
             </div>
         </div>
         <!-- Siaga Input -->
         <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm transition-colors duration-300">
             <h4 class="font-[800] text-[#D8C726] mb-1">Siaga</h4>
-            <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak < X cm</p>
+            <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak <= Aman, > Bahaya</p>
             <div class="flex overflow-hidden rounded-[8px] bg-[#E5E5EF]/60 dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-                <input type="number" value="7" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <input type="number" name="batas_waspada" value="{{ $waspadaVal }}" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
                 <div class="bg-[#C8C8E1] dark:bg-[rgba(255,255,255,0.05)] px-4 py-[10px] text-black dark:text-white font-[800] text-[14px]">cm</div>
             </div>
         </div>
         <!-- Bahaya Input -->
         <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm transition-colors duration-300">
             <h4 class="font-[800] text-[#e02424] mb-1">Bahaya</h4>
-            <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak < X cm</p>
+            <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak <= X cm</p>
             <div class="flex overflow-hidden rounded-[8px] bg-[#E5E5EF]/60 dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-                <input type="number" value="5" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <input type="number" name="batas_bahaya" value="{{ $bahayaVal }}" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
                 <div class="bg-[#C8C8E1] dark:bg-[rgba(255,255,255,0.05)] px-4 py-[10px] text-black dark:text-white font-[800] text-[14px]">cm</div>
             </div>
         </div>
     </div>
-</div>
+    
+    <div class="flex justify-end mt-[24px]">
+        <button type="submit" class="bg-[#9292C5] text-white px-[28px] py-[10px] rounded-[12px] font-bold text-[14px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_16px_rgba(146,146,197,0.35)]">
+            Simpan Threshold
+        </button>
+    </div>
+</form>
 
 <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm flex-1 transition-colors duration-300">
     <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white mb-[24px]">Konfigurasi Sensor</h3>

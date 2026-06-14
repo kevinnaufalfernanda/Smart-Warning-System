@@ -5,9 +5,18 @@
 <div class="grid grid-cols-1 md:grid-cols-12 gap-[24px]">
     <div class="col-span-12 md:col-span-5 flex flex-col gap-[24px]">
         <!-- Online Card -->
+        @php
+            $onlineCount = 0;
+            foreach($devices as $d) {
+                $lastLog = \App\Models\SensorLog::where('device_id', $d->id)->latest('created_at')->first();
+                if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
+                    $onlineCount++;
+                }
+            }
+        @endphp
         <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[160px] transition-colors duration-300">
             <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Perangkat Online</p>
-            <p class="text-[56px] font-[900] text-black dark:text-[#9292C5] text-right leading-none mt-2">1/3</p>
+            <p class="text-[56px] font-[900] text-black dark:text-[#9292C5] text-right leading-none mt-2">{{ $onlineCount }}/{{ $devices->count() }}</p>
         </div>
         <!-- Rumus -->
         <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm text-[#9292C5] dark:text-[#a5a5d1] font-[500] text-[14px] transition-colors duration-300">
@@ -45,9 +54,51 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-[24px] mt-[24px]">
-    <!-- EWS 1 -->
-    <div x-data="{ isEditing: false, nama: 'EWS 1', lokasi: 'Jembatan Soekarno - Hatta' }" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col transition-colors duration-300">
+@if(session('success'))
+<div class="mb-4 bg-[#e2f1e2] dark:bg-[#344034] text-[#6BBF6B] px-4 py-3 rounded-[12px] font-bold text-[14px]">
+    {{ session('success') }}
+</div>
+@endif
+
+<div class="flex justify-between items-center mt-[24px]">
+    <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white">Daftar Perangkat</h3>
+    <button onclick="document.getElementById('addDeviceModal').style.display='flex'" class="bg-[#9292C5] text-white px-[20px] py-[8px] rounded-[10px] text-[13px] font-bold flex items-center gap-2 hover:bg-[#8585b8] transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Tambah Perangkat
+    </button>
+</div>
+
+<!-- Modal Tambah Perangkat -->
+<div id="addDeviceModal" style="display:none;" class="fixed inset-0 bg-black/50 z-[100] items-center justify-center">
+    <div class="bg-white dark:bg-[#20212a] rounded-[24px] p-6 w-[400px] shadow-lg border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)]">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-[18px] font-bold text-black dark:text-white">Tambah Perangkat IoT</h3>
+            <button onclick="document.getElementById('addDeviceModal').style.display='none'" class="text-[#9292C5] hover:text-black dark:hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form action="{{ route('perangkat.store') }}" method="POST" class="flex flex-col gap-4">
+            @csrf
+            <div>
+                <label class="block text-[13px] font-bold text-black dark:text-[#a5a5d1] mb-1">Nama EWS</label>
+                <input type="text" name="name" required placeholder="Contoh: EWS 1" class="w-full bg-[#F3F3F3] dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[8px] px-3 py-2 text-[14px] font-medium dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
+            </div>
+            <div>
+                <label class="block text-[13px] font-bold text-black dark:text-[#a5a5d1] mb-1">Lokasi</label>
+                <input type="text" name="location" required placeholder="Contoh: Sungai Brantas" class="w-full bg-[#F3F3F3] dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[8px] px-3 py-2 text-[14px] font-medium dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
+            </div>
+            <div>
+                <label class="block text-[13px] font-bold text-black dark:text-[#a5a5d1] mb-1">MAC Address ESP32/NodeMCU</label>
+                <input type="text" name="mac_address" required placeholder="00:1B:44:11:3A:B7" class="w-full bg-[#F3F3F3] dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[8px] px-3 py-2 text-[14px] font-medium dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
+            </div>
+            <button type="submit" class="w-full bg-[#9292C5] text-white font-bold py-2 rounded-[8px] mt-2 hover:bg-[#8585b8] transition-colors">Simpan</button>
+        </form>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-[24px] mt-[16px]">
+    @foreach($devices as $device)
+    <div x-data="{ isEditing: false, nama: '{{ $device->name }}', lokasi: '{{ $device->station ? $device->station->location : '-' }}' }" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col transition-colors duration-300">
         <div class="flex justify-between items-start mb-[4px]">
             <template x-if="!isEditing">
                 <h3 class="font-bold tracking-tight text-[20px] text-black dark:text-white" x-text="nama"></h3>
@@ -55,51 +106,27 @@
             <template x-if="isEditing">
                 <input type="text" x-model="nama" class="bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[8px] px-2 py-1 text-[18px] font-bold dark:text-white w-[120px] focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
             </template>
+            
+            @php
+                // Cek status online berdasarkan log sensor terakhir (misal 5 menit terakhir)
+                $lastLog = \App\Models\SensorLog::where('device_id', $device->id)->latest('created_at')->first();
+                $isOnline = false;
+                if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
+                    $isOnline = true;
+                }
+            @endphp
+            
+            @if($isOnline)
             <div class="bg-white dark:bg-[#344034] px-[12px] py-[4px] rounded-full border border-[#e2f1e2] dark:border-transparent flex items-center gap-2 shadow-sm">
                 <div class="w-[7px] h-[7px] rounded-full bg-[#6BBF6B]"></div>
                 <span class="text-[#6BBF6B] font-[700] text-[12px]">Online</span>
             </div>
-        </div>
-        <template x-if="!isEditing">
-            <p class="text-[13px] text-[#555] dark:text-[#a5a5d1] font-medium mb-[20px]" x-text="lokasi"></p>
-        </template>
-        <template x-if="isEditing">
-            <input type="text" x-model="lokasi" class="bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[6px] px-2 py-1 text-[13px] font-medium dark:text-white w-full mb-[20px] focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
-        </template>
-        <div class="flex flex-col gap-[12px] text-[13px] flex-1">
-            <div>
-                <p class="font-[800] text-black dark:text-white mb-[2px]">MAC Address</p>
-                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">00:1B:44:11:3A:B7</p>
-            </div>
-            <div>
-                <p class="font-[800] text-black dark:text-white mb-[2px]">Tinggi Instalasi</p>
-                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">200 Meter</p>
-            </div>
-        </div>
-        <button @click="isEditing = !isEditing" :class="isEditing ? 'bg-[#6BBF6B] hover:bg-[#5aa85a]' : 'bg-[#9292C5] hover:bg-[#7b7bb2]'" class="mt-[20px] w-full text-white font-[700] py-[10px] rounded-[12px] text-[13px] transition-colors duration-300 flex items-center justify-center gap-2">
-            <template x-if="!isEditing">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-            </template>
-            <template x-if="isEditing">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            </template>
-            <span x-text="isEditing ? 'Simpan Perubahan' : 'Edit'"></span>
-        </button>
-    </div>
-
-    <!-- EWS 2 -->
-    <div x-data="{ isEditing: false, nama: 'EWS 2', lokasi: 'Jembatan Sulfat' }" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col transition-colors duration-300">
-        <div class="flex justify-between items-start mb-[4px]">
-            <template x-if="!isEditing">
-                <h3 class="font-bold tracking-tight text-[20px] text-black dark:text-white" x-text="nama"></h3>
-            </template>
-            <template x-if="isEditing">
-                <input type="text" x-model="nama" class="bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[8px] px-2 py-1 text-[18px] font-bold dark:text-white w-[120px] focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
-            </template>
+            @else
             <div class="bg-white dark:bg-[#402929] px-[12px] py-[4px] rounded-full border border-[#fde8e8] dark:border-transparent flex items-center gap-2 shadow-sm">
                 <div class="w-[7px] h-[7px] rounded-full bg-[#e02424]"></div>
                 <span class="text-[#e02424] font-[700] text-[12px]">Offline</span>
             </div>
+            @endif
         </div>
         <template x-if="!isEditing">
             <p class="text-[13px] text-[#555] dark:text-[#a5a5d1] font-medium mb-[20px]" x-text="lokasi"></p>
@@ -110,64 +137,15 @@
         <div class="flex flex-col gap-[12px] text-[13px] flex-1">
             <div>
                 <p class="font-[800] text-black dark:text-white mb-[2px]">MAC Address</p>
-                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">00:1B:44:11:3B:8C</p>
+                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">{{ $device->mac_address }}</p>
             </div>
             <div>
-                <p class="font-[800] text-black dark:text-white mb-[2px]">Tinggi Instalasi</p>
-                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">200 Meter</p>
+                <p class="font-[800] text-black dark:text-white mb-[2px]">Terakhir Aktif</p>
+                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">{{ $lastLog ? \Carbon\Carbon::parse($lastLog->created_at)->diffForHumans() : 'Belum pernah terhubung' }}</p>
             </div>
         </div>
-        <button @click="isEditing = !isEditing" :class="isEditing ? 'bg-[#6BBF6B] hover:bg-[#5aa85a]' : 'bg-[#9292C5] hover:bg-[#7b7bb2]'" class="mt-[20px] w-full text-white font-[700] py-[10px] rounded-[12px] text-[13px] transition-colors duration-300 flex items-center justify-center gap-2">
-            <template x-if="!isEditing">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-            </template>
-            <template x-if="isEditing">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            </template>
-            <span x-text="isEditing ? 'Simpan Perubahan' : 'Edit'"></span>
-        </button>
     </div>
-
-    <!-- EWS 3 -->
-    <div x-data="{ isEditing: false, nama: 'EWS 3', lokasi: 'Jembatan Kedungkandang' }" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col transition-colors duration-300">
-        <div class="flex justify-between items-start mb-[4px]">
-            <template x-if="!isEditing">
-                <h3 class="font-bold tracking-tight text-[20px] text-black dark:text-white" x-text="nama"></h3>
-            </template>
-            <template x-if="isEditing">
-                <input type="text" x-model="nama" class="bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[8px] px-2 py-1 text-[18px] font-bold dark:text-white w-[120px] focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
-            </template>
-            <div class="bg-white dark:bg-[#402929] px-[12px] py-[4px] rounded-full border border-[#fde8e8] dark:border-transparent flex items-center gap-2 shadow-sm">
-                <div class="w-[7px] h-[7px] rounded-full bg-[#e02424]"></div>
-                <span class="text-[#e02424] font-[700] text-[12px]">Offline</span>
-            </div>
-        </div>
-        <template x-if="!isEditing">
-            <p class="text-[13px] text-[#555] dark:text-[#a5a5d1] font-medium mb-[20px]" x-text="lokasi"></p>
-        </template>
-        <template x-if="isEditing">
-            <input type="text" x-model="lokasi" class="bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.1)] rounded-[6px] px-2 py-1 text-[13px] font-medium dark:text-white w-full mb-[20px] focus:outline-none focus:ring-2 focus:ring-[#9292C5]">
-        </template>
-        <div class="flex flex-col gap-[12px] text-[13px] flex-1">
-            <div>
-                <p class="font-[800] text-black dark:text-white mb-[2px]">MAC Address</p>
-                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">00:1B:44:11:3C:9A</p>
-            </div>
-            <div>
-                <p class="font-[800] text-black dark:text-white mb-[2px]">Tinggi Instalasi</p>
-                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">200 Meter</p>
-            </div>
-        </div>
-        <button @click="isEditing = !isEditing" :class="isEditing ? 'bg-[#6BBF6B] hover:bg-[#5aa85a]' : 'bg-[#9292C5] hover:bg-[#7b7bb2]'" class="mt-[20px] w-full text-white font-[700] py-[10px] rounded-[12px] text-[13px] transition-colors duration-300 flex items-center justify-center gap-2">
-            <template x-if="!isEditing">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-            </template>
-            <template x-if="isEditing">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            </template>
-            <span x-text="isEditing ? 'Simpan Perubahan' : 'Edit'"></span>
-        </button>
-    </div>
+    @endforeach
 </div>
 
 <!-- Error Logs Section -->

@@ -262,10 +262,8 @@
                             this.device.levelAir = Math.round(jarak);
                             this.isOnline = true;
                             
-                            // Penentuan Status (Sesuai Hardware Arduino)
-                            if (jarak >= 0 && jarak <= 20) this.device.status = 'Bahaya';
-                            else if (jarak > 20 && jarak <= 60) this.device.status = 'Waspada';
-                            else this.device.status = 'Aman';
+                            // Penentuan Status dari backend yang menghitung dari DB Threshold
+                            this.device.status = data.status || 'Aman';
                             
                             // Ambil Cuaca (Hujan / Cerah)
                             this.device.statusHujan = data.hujan || 'Cerah';
