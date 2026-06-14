@@ -35,6 +35,7 @@ Route::get('/setup-db', function() {
 
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+    Route::get('/login', function() { return redirect('/'); });
     Route::post('/login', [AuthController::class, 'processLogin'])->name('login.process');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'processRegister'])->name('register.process');
