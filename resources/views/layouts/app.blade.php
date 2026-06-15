@@ -93,20 +93,7 @@
         .stagger-2 { animation-delay: 0.2s; }
         .stagger-3 { animation-delay: 0.3s; }
         .stagger-4 { animation-delay: 0.4s; }
-        /* Swup SPA Transitions */
-        .transition-fade {
-            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-            opacity: 1;
-            transform: translateY(0);
-        }
-        html.is-animating .transition-fade {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        html.is-leaving .transition-fade {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
+        /* Removed Swup SPA Transitions */
     </style>
     <!-- Library Eksternal (Chart.js / ApexCharts) -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -181,7 +168,7 @@
                     init() {
                         this.movePill();
                     }
-                }" @swup:page-view.window="activePath = window.location.pathname.replace(/^\/|\/$/g, '') || 'dashboard'; movePill();">
+                }">
                     
                     <!-- The Magic Sliding Pill -->
                     <div class="absolute left-[-12px] right-[-12px] bg-[#9292C5] rounded-[16px] shadow-[0_8px_24px_rgba(146,146,197,0.6)] dark:shadow-[0_8px_24px_rgba(146,146,197,0.3)] z-0 pointer-events-none"
@@ -265,7 +252,7 @@
                 <div class="px-[24px] md:px-[32px] pt-[24px] flex-shrink-0 transition-colors duration-300">
                 <!-- Global Top Header -->
                 <header class="flex items-center justify-between bg-[#F3F3F3] dark:bg-[#20212a] rounded-[24px] px-[24px] py-[16px] mb-[20px] transition-colors duration-300 border border-transparent dark:border-[rgba(255,255,255,0.05)] shadow-sm">
-                    <h2 id="page-title" class="text-[20px] font-bold text-black dark:text-white tracking-tight transition-fade">@yield('title')</h2>
+                    <h2 id="page-title" class="text-[20px] font-bold text-black dark:text-white tracking-tight">@yield('title')</h2>
                     
                     <div class="flex items-center gap-[20px] relative" x-data="{ open: false }">
                         
@@ -285,179 +272,14 @@
             </div>
 
                 <!-- Content Area -->
-                <div id="swup" class="transition-fade px-[24px] md:px-[32px] pb-[32px] w-full relative z-0 flex-1">
+                <div class="px-[24px] md:px-[32px] pb-[32px] w-full relative z-0 flex-1">
                     @yield('content')
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Swup SPA Integration -->
-    <script src="https://unpkg.com/swup@4"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const swup = new Swup({
-                containers: ['#swup', '#page-title'],
-                animationSelector: '[class*="transition-"]'
-            });
-
-            // Restore dark mode class after Swup replaces the HTML
-            swup.hooks.on('page:view', () => {
-                if (localStorage.getItem('color-theme') === 'dark') {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            });
-        });
-        
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('dashboardWidget', () => ({
-                open: false, 
-                device: {
-                    name: 'EWS 1',
-                    lokasi: 'Soekarno-Hatta',
-                    levelAir: 0,
-                    status: 'Menunggu',
-                    statusHujan: 'Cerah',
-                    terakhirUpdate: '...'
-                },
-                showToast: false,
-                toastTitle: '',
-                toastMessage: '',
-                toastBorderColor: 'border-[#e02424]',
-                toastIconBg: 'bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)]',
-                toastIconColor: 'text-[#c81e1e] dark:text-[#e02424]',
-                toastTitleColor: 'text-[#e02424]',
-                isOnline: true,
-                chartInstance: null,
-                chartData: [],
-                tick: 0,
-                lastStatus: null,
-                lastRainStatus: null,
-                getColor() {
-                    let status = this.device.status;
-                    if (status === 'Bahaya') return '#e02424';
-                    if (status === 'Waspada') return '#f59e0b';
-                    if (status === 'Menunggu') return '#9292C5';
-                    return '#6BBF6B';
-                },
-                getRainColor() {
-                    let status = this.device.statusHujan;
-                    if (status === 'Hujan') return '#9292C5';
-                    if (status === 'Menunggu') return '#9292C5';
-                    return '#6BBF6B';
-                },
-                init() {
-                    if ('Notification' in window && Notification.permission !== 'denied') {
-                        Notification.requestPermission();
-                    }
-
-                    this.$nextTick(() => {
-                        if (typeof ApexCharts === 'undefined') {
-                            console.error('ApexCharts library is not loaded!');
-                            return;
-                        }
-
-                        const isDark = document.documentElement.classList.contains('dark');
-                        const textColor = isDark ? '#a5a5d1' : '#9292C5';
-                        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-                        
-                        var options = {
-                            series: [{ name: 'Jarak', data: [] }],
-                            chart: {
-                                type: 'area',
-                                height: 120,
-                                animations: { enabled: true, easing: 'linear', dynamicAnimation: { speed: 1000 } },
-                                toolbar: { show: false },
-                                zoom: { enabled: false },
-                                parentHeightOffset: 0
-                            },
-                            dataLabels: { enabled: false },
-                            stroke: { curve: 'smooth', width: 3, colors: ['#9292C5'] },
-                            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100], colorStops: [{ offset: 0, color: '#9292C5', opacity: 0.4 }, { offset: 100, color: '#9292C5', opacity: 0.05 }] } },
-                            xaxis: { type: 'numeric', range: 20, labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false }, tooltip: { enabled: false } },
-                            yaxis: { max: 400, min: 0, tickAmount: 4, labels: { style: { colors: textColor, fontWeight: 600, fontSize: '11px' }, formatter: function(val) { return Math.round(val) + 'cm'; } } },
-                            grid: { borderColor: gridColor, strokeDashArray: 4 },
-                            tooltip: { theme: isDark ? 'dark' : 'light' }
-                        };
-
-                        this.chartInstance = new ApexCharts(document.querySelector('#realtimeChart'), options);
-                        this.chartInstance.render();
-                    });
-
-                    const fetchSensor = () => {
-                        fetch('/data-sensor/latest')
-                            .then(res => res.json())
-                            .then(data => {
-                                let jarak = data.jarak || 0;
-                                jarak = Math.max(0, Math.min(400, parseFloat(jarak)));
-                                this.device.levelAir = Math.round(jarak);
-                                this.isOnline = true;
-                                this.device.status = data.status || 'Aman';
-                                this.device.statusHujan = data.hujan || 'Cerah';
-                                
-                                const triggerNotif = (title, message, colors) => {
-                                    this.toastTitle = title;
-                                    this.toastMessage = message;
-                                    this.toastBorderColor = colors.border;
-                                    this.toastIconBg = colors.iconBg;
-                                    this.toastIconColor = colors.iconColor;
-                                    this.toastTitleColor = colors.titleColor;
-                                    this.showToast = true;
-                                    setTimeout(() => { this.showToast = false; }, 8000);
-                                    if ('Notification' in window && Notification.permission === 'granted') {
-                                        new Notification(title, { body: message, icon: '/favicon.ico' });
-                                    }
-                                };
-
-                                if (this.device.status === 'Bahaya' && this.lastStatus !== 'Bahaya') {
-                                    triggerNotif('🚨 BAHAYA BANJIR!', `Air menyentuh level kritis (${jarak}cm)! Cuaca: ${this.device.statusHujan}. Segera ambil tindakan.`, {
-                                        border: 'border-[#e02424]', iconBg: 'bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)]', iconColor: 'text-[#c81e1e] dark:text-[#e02424]', titleColor: 'text-[#e02424]'
-                                    });
-                                } else if (this.device.status === 'Waspada' && this.lastStatus !== 'Waspada' && this.lastStatus !== 'Bahaya') {
-                                    triggerNotif('⚠️ SIAGA BANJIR!', `Air memasuki level waspada (${jarak}cm). Cuaca: ${this.device.statusHujan}. Harap berhati-hati.`, {
-                                        border: 'border-[#f59e0b]', iconBg: 'bg-[#fef3c7] dark:bg-[rgba(245,158,11,0.15)]', iconColor: 'text-[#d97706] dark:text-[#f59e0b]', titleColor: 'text-[#f59e0b]'
-                                    });
-                                } else if (this.device.statusHujan === 'Hujan' && this.lastRainStatus !== 'Hujan') {
-                                    triggerNotif('PERINGATAN CUACA!', `Terdeteksi hujan turun. Jarak Air: ${jarak}cm. Pantau terus ketinggian air.`, {
-                                        border: 'border-[#9292C5]', iconBg: 'bg-[#E5E5EF] dark:bg-[rgba(146,146,197,0.15)]', iconColor: 'text-[#7b7bb2] dark:text-[#9292C5]', titleColor: 'text-[#9292C5]'
-                                    });
-                                }
-                                
-                                this.lastStatus = this.device.status;
-                                this.lastRainStatus = this.device.statusHujan;
-
-                                this.tick++;
-                                this.chartData.push({ x: this.tick, y: jarak });
-                                if (this.chartData.length > 30) this.chartData.shift();
-                                if (this.chartInstance) {
-                                    this.chartInstance.updateSeries([{ name: 'Jarak', data: this.chartData }]);
-                                }
-                                
-                                let d = new Date();
-                                this.device.terakhirUpdate = d.getHours().toString().padStart(2, '0') + '.' + d.getMinutes().toString().padStart(2, '0');
-                            })
-                            .catch(err => {
-                                this.isOnline = false;
-                                console.error('Sensor fetch error:', err);
-                            });
-                    };
-                    
-                    fetchSensor();
-                    if(this._intervalId) clearInterval(this._intervalId);
-                    this._intervalId = setInterval(fetchSensor, 2000);
-                },
-                destroy() {
-                    if(this._intervalId) clearInterval(this._intervalId);
-                    if(this.chartInstance) {
-                        this.chartInstance.destroy();
-                        this.chartInstance = null;
-                    }
-                }
-            }));
-        });
-    </script>
+    <!-- Standard Navigation Restored -->
     
     @stack('scripts')
 </body>

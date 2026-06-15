@@ -70,13 +70,28 @@ Route::middleware('auth')->group(function () {
             'led' => true
         ]);
         
+        $sensorConfig = Cache::get('sensor_config', ['interval_baca' => 10]);
+        $intervalMs = $sensorConfig['interval_baca'] * 1000;
+        
+        $sensorHistory = SensorLog::orderBy('id', 'desc')->take(20)->get()->reverse()->values();
+        $historyData = $sensorHistory->map(function($log) {
+            return [
+                'x' => \Carbon\Carbon::parse($log->created_at)->timestamp * 1000,
+                'y' => $log->distance_cm,
+                'metaTime' => \Carbon\Carbon::parse($log->created_at)->format('H:i:s')
+            ];
+        });
+        
         return view('dashboard', [
             'totalData' => $totalData,
             'totalPeringatan' => $totalPeringatan,
             'totalPerangkat' => $totalPerangkat,
             'onlineCount' => $onlineCount,
             'notifikasi' => $notifikasi,
-            'actuatorStates' => $actuatorStates
+            'actuatorStates' => $actuatorStates,
+            'devices' => $devices,
+            'historyData' => $historyData,
+            'intervalMs' => $intervalMs
         ]);
     })->name('dashboard');
 
@@ -90,10 +105,13 @@ Route::middleware('auth')->group(function () {
         $totalBahaya = SensorLog::where('flood_status', 'BAHAYA')->count();
         $totalSiaga = SensorLog::where('flood_status', 'WASPADA')->count();
         
+        $devices = \App\Models\Device::all();
+        
         return view('peringatan', [
             'data' => $peringatan,
             'totalBahaya' => $totalBahaya,
-            'totalSiaga' => $totalSiaga
+            'totalSiaga' => $totalSiaga,
+            'devices' => $devices
         ]);
     })->name('peringatan');
 
@@ -130,6 +148,25 @@ Route::middleware('auth')->group(function () {
         return back()->with('success', 'Perangkat berhasil ditambahkan!');
     })->name('perangkat.store');
 
+    Route::put('/perangkat/{id}', function (Request $request, $id) {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+        ]);
+
+        $device = \App\Models\Device::findOrFail($id);
+        $device->update(['name' => $request->name]);
+
+        if ($device->station) {
+            $device->station->update([
+                'name' => $request->name,
+                'location' => $request->location,
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    })->name('perangkat.update');
+
     Route::get('/riwayat', function () {
         $riwayat = SensorLog::with('device.station')->orderBy('id', 'desc')->take(200)->get();
         
@@ -139,12 +176,14 @@ Route::middleware('auth')->group(function () {
         $avgLevel = round($avgLevel);
         
         $highestLevel = SensorLog::max('distance_cm') ?? 0;
+        $devices = \App\Models\Device::all();
         
         return view('riwayat', [
             'data' => $riwayat,
             'totalData' => $totalData,
             'avgLevel' => $avgLevel,
-            'highestLevel' => $highestLevel
+            'highestLevel' => $highestLevel,
+            'devices' => $devices
         ]);
     })->name('riwayat');
 
@@ -155,8 +194,32 @@ Route::middleware('auth')->group(function () {
             'pompa' => true,
             'led' => true
         ]);
-        return view('pengaturan', ['stations' => $stations, 'actuatorStates' => $actuatorStates]);
+        
+        $sensorConfig = Cache::get('sensor_config', [
+            'tinggi_wadah' => 20,
+            'interval_baca' => 2
+        ]);
+        
+        return view('pengaturan', [
+            'stations' => $stations, 
+            'actuatorStates' => $actuatorStates,
+            'sensorConfig' => $sensorConfig
+        ]);
     })->name('pengaturan');
+
+    Route::post('/pengaturan/sensor', function (Request $request) {
+        $request->validate([
+            'tinggi_wadah' => 'required|numeric',
+            'interval_baca' => 'required|numeric',
+        ]);
+        
+        Cache::put('sensor_config', [
+            'tinggi_wadah' => $request->tinggi_wadah,
+            'interval_baca' => $request->interval_baca
+        ]);
+        
+        return back()->with('success', 'Konfigurasi Sensor berhasil diperbarui!');
+    })->name('pengaturan.sensor');
 
     Route::post('/pengaturan/threshold', function (Request $request) {
         $request->validate([
@@ -202,12 +265,82 @@ Route::get('/data-sensor/latest', function () {
     // Prepare dummy raw_pesan to avoid breaking frontend if it relies on it
     $rawPesan = $data ? "Jarak:{$data->distance_cm}, Hujan:{$data->rain_intensity_raw}, Kondisi:{$data->flood_condition}, Status:{$data->flood_status}" : '';
     
+    $rawPesan = $data ? "Jarak:{$data->distance_cm}, Hujan:{$data->rain_intensity_raw}, Kondisi:{$data->flood_condition}, Status:{$data->flood_status}" : '';
+    
+    $sensorConfig = Cache::get('sensor_config', [
+        'tinggi_wadah' => 20,
+        'interval_baca' => 2
+    ]);
+    
+    // Sinkronisasi status online (15 menit seperti di halaman perangkat)
+    $isOnline = false;
+    if ($data && \Carbon\Carbon::parse($data->created_at)->diffInMinutes(now()) <= 15) {
+        $isOnline = true;
+    }
+    
     return response()->json([
         'jarak' => $jarak,
         'hujan' => $kondisiHujan,
         'waktu' => $data ? $data->created_at : null,
         'raw_pesan' => $rawPesan,
-        'status' => $data ? ucfirst(strtolower($data->flood_status)) : 'Aman'
+        'status' => $data ? ucfirst(strtolower($data->flood_status)) : 'Aman',
+        'interval' => $sensorConfig['interval_baca'],
+        'isOnline' => $isOnline
+    ]);
+});
+
+Route::get('/api/chart-history', function (\Illuminate\Http\Request $request) {
+    $range = $request->query('range', '1h');
+    
+    $query = \App\Models\SensorLog::query();
+    $now = \Carbon\Carbon::now();
+    $modValue = 1;
+    
+    switch ($range) {
+        case '1h':
+            $query->where('created_at', '>=', $now->copy()->subHour());
+            $modValue = 1; // Ambil semua
+            break;
+        case '5h':
+            $query->where('created_at', '>=', $now->copy()->subHours(5));
+            $modValue = 5; // Sampling tiap 5 data
+            break;
+        case '1d':
+            $query->where('created_at', '>=', $now->copy()->subDay());
+            $modValue = 20; // Sampling tiap 20 data
+            break;
+        case '1w':
+            $query->where('created_at', '>=', $now->copy()->subWeek());
+            $modValue = 100;
+            break;
+        case '1m':
+            $query->where('created_at', '>=', $now->copy()->subMonth());
+            $modValue = 400;
+            break;
+        case 'all':
+        default:
+            $modValue = 1000;
+            break;
+    }
+    
+    if ($modValue > 1) {
+        // Kompatibel dengan MySQL dan SQLite
+        $query->whereRaw('id % ? = 0', [$modValue]);
+    }
+    
+    $sensorHistory = $query->orderBy('id', 'desc')->take(300)->get()->reverse()->values();
+    
+    $historyData = $sensorHistory->map(function($log) use ($range) {
+        $format = in_array($range, ['1h', '5h']) ? 'H:i:s' : 'd M, H:i';
+        return [
+            'x' => \Carbon\Carbon::parse($log->created_at)->timestamp * 1000,
+            'y' => $log->distance_cm,
+            'metaTime' => \Carbon\Carbon::parse($log->created_at)->format($format)
+        ];
+    });
+    
+    return response()->json([
+        'data' => $historyData
     ]);
 });
 

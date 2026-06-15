@@ -2,12 +2,15 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<div class="grid grid-cols-1 xl:grid-cols-12 gap-[24px] pb-4 items-start" x-data="dashboardWidget()">
+<style>
+    /* Menghilangkan CSS hide marker karena mengganggu hover tooltip */
+</style>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-[24px] pb-4 items-stretch" x-data="dashboardWidget()">
     
     <!-- Left Column -->
-    <div class="col-span-1 xl:col-span-5 flex flex-col gap-[24px] items-stretch animate-fade-in-up stagger-1">
+    <div class="col-span-1 xl:col-span-5 flex flex-col gap-[24px] items-stretch animate-fade-in-up stagger-1 h-full">
         <!-- Status Air Card -->
-        <div class="bg-[#F3F3F3] dark:bg-[#20212a] rounded-[24px] p-[24px] md:p-[28px] flex flex-col relative border border-transparent dark:border-[rgba(255,255,255,0.05)] modern-card">
+        <div class="bg-[#F3F3F3] dark:bg-[#20212a] rounded-[24px] p-[24px] md:p-[28px] flex flex-col relative border border-transparent dark:border-[rgba(255,255,255,0.05)] modern-card flex-1 overflow-hidden">
             
             <!-- Header -->
             <div class="flex justify-between items-start relative z-50 w-full mb-[4px]">
@@ -20,12 +23,14 @@
                             <span x-text="device.name">EWS 1</span>
                             <svg class="w-3.5 h-3.5 transition-transform duration-300" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
-                        <div x-show="open" x-transition style="display: none;" class="absolute left-0 mt-2 w-[140px] bg-white dark:bg-[#2e2f3a] rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] py-2 z-[100]">
-                            <button @click="open = false" class="w-full text-left px-4 py-2 text-[13px] font-semibold text-black dark:text-white hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.05)] transition-colors relative z-10">EWS 1</button>
+                        <div x-show="open" x-transition style="display: none;" class="absolute left-0 mt-2 w-[180px] bg-white dark:bg-[#2e2f3a] rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] py-2 z-[100]">
+                            @foreach($devices as $dev)
+                            <button @click="changeDevice({{ $dev->id }}, '{{ $dev->name }}', '{{ $dev->station ? $dev->station->location : '-' }}'); open = false" class="w-full text-left px-4 py-2 text-[13px] font-semibold text-black dark:text-white hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.05)] transition-colors relative z-10">{{ $dev->name }}</button>
+                            @endforeach
                         </div>
                     </div>
                     
-                    <p class="text-[#555] dark:text-[#a5a5d1] text-[14px] font-medium leading-snug break-words pr-2" x-text="'Sungai Brantas ' + device.lokasi">Sungai Brantas Soekarno-Hatta</p>
+                    <p class="text-[#555] dark:text-[#a5a5d1] text-[14px] font-medium leading-snug break-words pr-2" x-text="device.lokasi"></p>
                 </div>
                 
                 <!-- Online Badge -->
@@ -53,9 +58,20 @@
                 <p class="text-[26px] md:text-[28px] font-[900] mt-[12px] tracking-wide transition-colors duration-500 z-10" :style="`color: ${getColor()}`" x-text="device.status">Aman</p>
             </div>
             
-            <!-- Real Chart Area -->
-            <div class="w-full h-[120px] mt-[16px] mb-[16px] relative z-0 flex items-stretch pr-[12px] pl-[4px]">
-                <div id="realtimeChart" class="w-full h-full" wire:ignore></div>
+            <!-- Filter Ranges (Google Finance Style) -->
+            <div class="flex justify-end items-center gap-[6px] mt-[12px] mb-[-4px] z-10 relative px-[16px]">
+                <template x-for="r in ['Live', '1 Jam', '5 Jam', '1 Hari', '1 Minggu', '1 Bulan']">
+                    <button @click="fetchChartHistory(r)" 
+                            class="px-[12px] py-[4px] rounded-full text-[11px] font-bold transition-all duration-200 whitespace-nowrap"
+                            :class="currentRange === r ? 'bg-[#9292C5] text-white shadow-sm' : 'text-[#9292C5] hover:bg-[#9292C5]/10 dark:hover:bg-[#9292C5]/20'"
+                            x-text="r">
+                    </button>
+                </template>
+            </div>
+
+            <!-- Real Chart Area (Modern ApexChart) -->
+            <div class="flex-1 min-h-[140px] mt-[8px] mb-[16px] -mx-[24px] md:-mx-[28px] px-[12px] relative z-0 flex flex-col justify-end bg-gradient-to-b from-transparent via-[#9292C5]/10 to-transparent dark:via-[#9292C5]/20">
+                <div id="realtimeChart" class="w-full h-[140px]" wire:ignore></div>
             </div>
 
             <!-- Bottom Info: Jarak Sensor & Terakhir Update -->
@@ -135,7 +151,7 @@
             <h3 class="text-[20px] font-bold tracking-tight mb-[16px] text-black dark:text-white">Notifikasi Terkini</h3>
             
             <div class="flex flex-col gap-[12px] flex-1 w-full max-w-full">
-                @forelse($notifikasi as $notif)
+                @foreach($notifikasi as $notif)
                 @php
                     $statusType = ucfirst(strtolower($notif->alert_level));
                     
@@ -156,13 +172,17 @@
                     <span class="truncate flex-1">{{ $msgText }}</span>
                     <span class="ml-auto text-[#9292C5] dark:text-[#a5a5d1] font-bold text-[11px] shrink-0">{{ $timeStr }}</span>
                 </div>
-                @empty
-                <div class="text-center w-full py-6 font-[600] text-[#a5a5d1]">Belum ada Notifikasi Terbaru</div>
-                @endforelse
+                @endforeach
+                
+                @for($i = $notifikasi->count(); $i < 3; $i++)
+                <div class="bg-transparent border border-dashed border-[#d1d5db] dark:border-[rgba(255,255,255,0.1)] min-h-[56px] rounded-[14px] w-full flex items-center justify-center text-[13px] text-[#a5a5d1] font-[600] opacity-50">
+                    Slot Notifikasi Kosong
+                </div>
+                @endfor
             </div>
 
-            <div class="flex justify-end mt-[16px]">
-                <a href="/peringatan" class="text-[#9292C5] border border-[#9292C5] px-4 py-1.5 rounded-[10px] font-bold text-[13px] hover:bg-[#9292C5] hover:text-white transition-all shadow-sm">
+            <div class="flex justify-end mt-auto pt-[16px]">
+                <a href="/peringatan" class="bg-[#9292C5] text-white px-5 py-2 rounded-[10px] font-bold text-[13px] hover:bg-[#8585b8] hover:shadow-md transition-all shadow-sm">
                     Selengkapnya
                 </a>
             </div>
@@ -203,7 +223,7 @@
                     <p class="text-[13px] font-[600] text-[#a5a5d1]">Berbunyi saat bahaya</p>
                 </div>
                 <div @click="buzzer = !buzzer; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm transition-colors duration-300 shrink-0" :class="buzzer ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
-                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="buzzer ? 'right-[3px]' : 'left-[3px]'"></div>
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] left-[3px] shadow-sm transition-transform duration-300 ease-in-out" :class="buzzer ? 'translate-x-[18px]' : 'translate-x-0'"></div>
                 </div>
             </div>
 
@@ -213,7 +233,7 @@
                     <p class="text-[13px] font-[600] text-[#a5a5d1]">Menyedot air otomatis</p>
                 </div>
                 <div @click="pompa = !pompa; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm transition-colors duration-300 shrink-0" :class="pompa ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
-                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="pompa ? 'right-[3px]' : 'left-[3px]'"></div>
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] left-[3px] shadow-sm transition-transform duration-300 ease-in-out" :class="pompa ? 'translate-x-[18px]' : 'translate-x-0'"></div>
                 </div>
             </div>
 
@@ -223,7 +243,7 @@
                     <p class="text-[13px] font-[600] text-[#a5a5d1]">Indikator visual</p>
                 </div>
                 <div @click="led = !led; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm transition-colors duration-300 shrink-0" :class="led ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
-                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="led ? 'right-[3px]' : 'left-[3px]'"></div>
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] left-[3px] shadow-sm transition-transform duration-300 ease-in-out" :class="led ? 'translate-x-[18px]' : 'translate-x-0'"></div>
                 </div>
             </div>
         </div>
@@ -249,12 +269,19 @@
         Alpine.data('dashboardWidget', () => ({
             open: false, 
             device: {
-                name: 'EWS 1',
-                lokasi: 'Soekarno-Hatta',
+                id: {{ $devices->first()->id ?? 0 }},
+                name: '{{ $devices->first()->name ?? "EWS Belum Tersedia" }}',
+                lokasi: '{{ ($devices->first() && $devices->first()->station) ? $devices->first()->station->location : "Lokasi Belum Diatur" }}',
                 levelAir: 0,
                 status: 'Menunggu',
                 statusHujan: 'Cerah',
                 terakhirUpdate: '...'
+            },
+            changeDevice(id, name, lokasi) {
+                this.device.id = id;
+                this.device.name = name;
+                this.device.lokasi = lokasi;
+                // When API is ready, we would fetch data specifically for this.device.id
             },
             showToast: false,
             toastTitle: '',
@@ -265,7 +292,8 @@
             toastTitleColor: 'text-[#e02424]',
             isOnline: true,
             chartInstance: null,
-            chartData: [],
+            chartData: {!! json_encode($historyData) !!},
+            currentRange: 'Live',
             tick: 0,
             lastStatus: null,
             lastRainStatus: null,
@@ -281,6 +309,43 @@
                 if (status === 'Hujan') return '#9292C5';
                 if (status === 'Menunggu') return '#9292C5';
                 return '#6BBF6B';
+            },
+            fetchChartHistory(range) {
+                if(this.currentRange === range) return;
+                this.currentRange = range;
+                
+                if(range === 'Live') {
+                    // Reset ke mode Live (Geser cepat 20 data)
+                    this.chartInstance.updateOptions({ xaxis: { range: {{ ($intervalMs > 0 ? $intervalMs : 2000) * 20 }} } });
+                    this.chartData = this.chartData.slice(-20);
+                    this.chartInstance.updateSeries([{ data: this.chartData }]);
+                    return;
+                }
+                
+                // Ambil history
+                let mapping = {'1 Jam':'1h', '5 Jam':'5h', '1 Hari':'1d', '1 Minggu':'1w', '1 Bulan':'1m'};
+                let apiRange = mapping[range] || '1h';
+                
+                fetch(`/api/chart-history?range=${apiRange}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        if(res.data) {
+                            this.chartData = res.data;
+                            
+                            // Hitung range ms
+                            let rangeMs;
+                            if(range === '1 Jam') rangeMs = 60 * 60 * 1000;
+                            else if(range === '5 Jam') rangeMs = 5 * 60 * 60 * 1000;
+                            else if(range === '1 Hari') rangeMs = 24 * 60 * 60 * 1000;
+                            else if(range === '1 Minggu') rangeMs = 7 * 24 * 60 * 60 * 1000;
+                            else if(range === '1 Bulan') rangeMs = 30 * 24 * 60 * 60 * 1000;
+                            
+                            // Update tanpa animasi khusus agar tidak flickering aneh saat ganti periode jauh
+                            this.chartInstance.updateOptions({ xaxis: { range: rangeMs } }, false, false);
+                            this.chartInstance.updateSeries([{ data: this.chartData }], false);
+                        }
+                    })
+                    .catch(e => console.error("Gagal menarik history", e));
             },
             init() {
                 // Minta Izin Notification Browser
@@ -300,22 +365,89 @@
                     const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
                     
                     var options = {
-                        series: [{ name: 'Jarak', data: [] }],
+                        series: [{ name: 'Jarak (cm)', data: this.chartData }],
                         chart: {
                             type: 'area',
-                            height: 120,
-                            animations: { enabled: true, easing: 'linear', dynamicAnimation: { speed: 1000 } },
+                            height: 140,
+                            animations: { enabled: true, easing: 'easeinout', speed: 500, dynamicAnimation: { speed: 500 } },
                             toolbar: { show: false },
                             zoom: { enabled: false },
-                            parentHeightOffset: 0
+                            parentHeightOffset: 0,
+                            sparkline: { enabled: false }
                         },
                         dataLabels: { enabled: false },
-                        stroke: { curve: 'smooth', width: 3, colors: ['#9292C5'] },
-                        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100], colorStops: [{ offset: 0, color: '#9292C5', opacity: 0.4 }, { offset: 100, color: '#9292C5', opacity: 0.05 }] } },
-                        xaxis: { type: 'numeric', range: 20, labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false }, tooltip: { enabled: false } },
-                        yaxis: { max: 400, min: 0, tickAmount: 4, labels: { style: { colors: textColor, fontWeight: 600, fontSize: '11px' }, formatter: function(val) { return Math.round(val) + 'cm'; } } },
-                        grid: { borderColor: gridColor, strokeDashArray: 4 },
-                        tooltip: { theme: isDark ? 'dark' : 'light' }
+                        stroke: { curve: 'smooth', width: 4, colors: ['#9292C5'] },
+                        fill: { 
+                            type: 'gradient', 
+                            gradient: { 
+                                shadeIntensity: 1, 
+                                opacityFrom: 0.6, 
+                                opacityTo: 0.0, 
+                                stops: [0, 100], 
+                                colorStops: [
+                                    { offset: 0, color: '#9292C5', opacity: 0.5 }, 
+                                    { offset: 100, color: '#9292C5', opacity: 0.0 }
+                                ] 
+                            } 
+                        },
+                        xaxis: { 
+                            type: 'datetime', 
+                            range: {{ ($intervalMs > 0 ? $intervalMs : 2000) * 20 }}, 
+                            labels: { show: false }, 
+                            axisBorder: { show: false }, 
+                            axisTicks: { show: false }, 
+                            tooltip: { enabled: false }, 
+                            crosshairs: { 
+                                show: true,
+                                position: 'back',
+                                stroke: { color: '#9292C5', width: 1, dashArray: 4 }
+                            } 
+                        },
+                        markers: {
+                            size: 0,
+                            colors: ['#fff'],
+                            strokeColors: '#9292C5',
+                            strokeWidth: 3,
+                            hover: { size: 6, sizeOffset: 2 }
+                        },
+                        yaxis: { 
+                            max: 50, 
+                            min: 0, 
+                            tickAmount: 2,
+                            labels: { 
+                                show: true, 
+                                style: { colors: textColor, fontWeight: 700, fontSize: '11px', fontFamily: '"Plus Jakarta Sans", sans-serif' },
+                                formatter: function(val) { return Math.round(val); }
+                            },
+                            crosshairs: {
+                                show: true,
+                                position: 'back',
+                                stroke: { color: '#9292C5', width: 1, dashArray: 4 }
+                            }
+                        },
+                        grid: { 
+                            show: true, 
+                            borderColor: gridColor, 
+                            strokeDashArray: 4, 
+                            padding: { left: 15, right: 10, top: 0, bottom: 0 },
+                            xaxis: { lines: { show: false } }, 
+                            yaxis: { lines: { show: true } }
+                        },
+                        tooltip: { 
+                            theme: isDark ? 'dark' : 'light', 
+                            marker: { show: false }, 
+                            x: { 
+                                formatter: function(val, opts) {
+                                    if (opts && opts.w && opts.w.config.series[opts.seriesIndex].data[opts.dataPointIndex]) {
+                                        let meta = opts.w.config.series[opts.seriesIndex].data[opts.dataPointIndex].metaTime;
+                                        if (meta) return meta;
+                                    }
+                                    let d = new Date(val);
+                                    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ':' + d.getSeconds().toString().padStart(2, '0');
+                                } 
+                            },
+                            y: { formatter: function(val) { return Math.round(val) + " cm" } } 
+                        }
                     };
 
                     this.chartInstance = new ApexCharts(document.querySelector('#realtimeChart'), options);
@@ -371,26 +503,76 @@
                             this.lastStatus = this.device.status;
                             this.lastRainStatus = this.device.statusHujan;
 
-                            // Perbarui Chart Data
-                            this.tick++;
-                            this.chartData.push({ x: this.tick, y: jarak });
-                            if (this.chartData.length > 30) this.chartData.shift();
-                            if (this.chartInstance) {
-                                this.chartInstance.updateSeries([{ name: 'Jarak', data: this.chartData }]);
+                            // Gunakan Unix timestamp dari backend agar sinkron 100% dengan data histori (mencegah grafik lompat/reset karena zona waktu)
+                            let newX = data.timestamp ? data.timestamp : new Date().getTime();
+                            let dbDate = data.waktu ? new Date(data.waktu) : new Date(); // Hanya untuk parsing jam meta
+                            let metaTimeStr = dbDate.getHours().toString().padStart(2, '0') + ':' + dbDate.getMinutes().toString().padStart(2, '0') + ':' + dbDate.getSeconds().toString().padStart(2, '0');
+                            
+                            let lastX = this.chartData.length > 0 ? this.chartData[this.chartData.length - 1].x : 0;
+                            
+                            // HANYA tambahkan titik baru jika waktunya benar-benar bergerak maju (mencegah duplikasi saat offline)
+                            if (newX > lastX) {
+                                this.chartData.push({ x: newX, y: jarak, metaTime: metaTimeStr });
+                                
+                                // Batasi memori array
+                                let maxArraySize = this.currentRange === 'Live' ? 20 : 1500;
+                                if (this.chartData.length > maxArraySize) this.chartData.shift();
+                                
+                                // Hitung adaptasi meteran grafik (Dynamic Max)
+                                let maxDataVal = Math.max(...this.chartData.map(d => d.y));
+                                let dynamicMax = 50;
+                                if (maxDataVal <= 50) dynamicMax = 100;
+                                else if (maxDataVal <= 100) dynamicMax = 200;
+                                else dynamicMax = 400;
+                                
+                                let intervalRaw = data.interval ? parseInt(data.interval) : 10;
+                                window.chartInterval = intervalRaw;
+
+                                let optionsToUpdate = {};
+                                let needsOptionUpdate = false;
+                                
+                                if (this.lastDynamicMax !== dynamicMax) {
+                                    optionsToUpdate.yaxis = { max: dynamicMax, min: 0, tickAmount: 2 };
+                                    this.lastDynamicMax = dynamicMax;
+                                    needsOptionUpdate = true;
+                                }
+                                
+                                if (this.chartInstance) {
+                                    if (needsOptionUpdate) {
+                                        this.chartInstance.updateOptions(optionsToUpdate, false, true);
+                                    }
+                                    this.chartInstance.updateSeries([{ name: 'Jarak', data: this.chartData }]);
+                                }
                             }
                             
-                            // Waktu Update
-                            let d = new Date();
-                            this.device.terakhirUpdate = d.getHours().toString().padStart(2, '0') + '.' + d.getMinutes().toString().padStart(2, '0');
+                            // Waktu Update Real
+                            let timeStr = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
+                            this.device.terakhirUpdate = timeStr;
+                            
+                            let intervalMs = (window.chartInterval || 2) * 1000;
+                            if (window.sensorTimer) clearTimeout(window.sensorTimer);
+                            window.sensorTimer = setTimeout(fetchSensor, intervalMs);
                         })
                         .catch(err => {
                             this.isOnline = false;
                             console.error('Sensor fetch error:', err);
+                            if (window.sensorTimer) clearTimeout(window.sensorTimer);
+                            window.sensorTimer = setTimeout(fetchSensor, 5000);
                         });
                 };
                 
                 fetchSensor();
-                setInterval(fetchSensor, 2000);
+            },
+            destroy() {
+                // Bersihkan timer dan chart saat pindah halaman agar tidak menumpuk (karena fitur SPA Swup)
+                if (window.sensorTimer) {
+                    clearTimeout(window.sensorTimer);
+                    window.sensorTimer = null;
+                }
+                if (this.chartInstance) {
+                    this.chartInstance.destroy();
+                    this.chartInstance = null;
+                }
             }
         }));
     });

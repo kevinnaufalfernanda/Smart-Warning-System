@@ -7,9 +7,9 @@
     filterPerangkat: 'Semua Perangkat',
     filterSort: 'Terbaru',
     filterTanggal: '',
-    checkFilter(status, ewsId, dateYmd) {
+    checkFilter(status, deviceName, dateYmd) {
         let matchStatus = (this.filterStatus === 'Semua Status' || this.filterStatus === status);
-        let matchPerangkat = (this.filterPerangkat === 'Semua Perangkat' || this.filterPerangkat === 'EWS ' + ewsId);
+        let matchPerangkat = (this.filterPerangkat === 'Semua Perangkat' || this.filterPerangkat === deviceName);
         let matchDate = (this.filterTanggal === '' || this.filterTanggal === dateYmd);
         return matchStatus && matchPerangkat && matchDate;
     },
@@ -73,8 +73,12 @@
                     <svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div x-show="dropdownOpen" x-transition class="absolute left-0 mt-2 w-[160px] bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] rounded-[16px] shadow-lg py-2 z-50">
-                    <template x-for="item in ['Semua Perangkat', 'EWS 1', 'EWS 2', 'EWS 3']">
-                        <button @click="filterPerangkat = item; dropdownOpen = false" class="w-full text-left px-[20px] py-[8px] text-[13px] font-[600] text-[#555] dark:text-[#a5a5d1] hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.02)] transition-colors" x-text="item"></button>
+                    @php
+                        $deviceNames = $devices->pluck('name')->toArray();
+                        array_unshift($deviceNames, 'Semua Perangkat');
+                    @endphp
+                    <template x-for="item in {{ json_encode($deviceNames) }}">
+                        <button @click="filterPerangkat = item; dropdownOpen = false; sortData();" class="w-full text-left px-[20px] py-[8px] text-[13px] font-[600] text-[#555] dark:text-[#a5a5d1] hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.02)] transition-colors" x-text="item"></button>
                     </template>
                 </div>
             </div>
@@ -143,15 +147,15 @@
                     elseif ($statusType === 'Waspada') $badgeClass = 'bg-[#fef3c7] text-[#d97706] dark:bg-[rgba(245,158,11,0.15)] dark:text-[#f59e0b]';
                     else $badgeClass = 'bg-[#e2f1e2] text-[#22c55e] dark:bg-[rgba(34,197,94,0.15)] dark:text-[#4ade80]';
                     
-                    $ewsId = 1; // Default
+                    $deviceName = $row->device ? $row->device->name : 'EWS 1';
                 @endphp
-                <tbody class="data-row" data-timestamp="{{ $timestamp }}" data-date-ymd="{{ $dateYmd }}" x-data="{ open: false }" x-show="checkFilter('{{ $statusType }}', {{ $ewsId }}, '{{ $dateYmd }}')" x-transition.opacity class="border-b border-[#E5E5EF] dark:border-[#2a2b36]">
+                <tbody class="data-row" data-timestamp="{{ $timestamp }}" data-date-ymd="{{ $dateYmd }}" x-data="{ open: false }" x-show="checkFilter('{{ $statusType }}', '{{ $deviceName }}', '{{ $dateYmd }}')" x-transition.opacity class="border-b border-[#E5E5EF] dark:border-[#2a2b36]">
                     <tr @click="open = true" class="cursor-pointer bg-transparent hover:bg-[#9292C5]/40 dark:hover:bg-[#9292C5]/40 text-black dark:text-[#d1d1d8] font-[500] transition-colors duration-300">
                         <td class="py-[14px] px-[20px]">
                             <span class="text-[12px] font-[700] px-[12px] py-[4px] rounded-full {{ $badgeClass }}">{{ $statusLabel }}</span>
                         </td>
                         <td class="py-[14px] px-[20px]">
-                            <span class="font-[600] text-[13px]">EWS {{ $ewsId }}</span>
+                            <span class="font-[600] text-[13px]">{{ $deviceName }}</span>
                         </td>
                         <td class="py-[14px] px-[20px] text-center font-bold text-[13px]">{{ $jarakVal }}cm</td>
                         <td class="py-[14px] px-[20px] text-center font-bold text-[13px]">{{ $jarakVal }}cm</td>
@@ -208,8 +212,8 @@
                                     <!-- Grid Details -->
                                     <div class="grid grid-cols-2 gap-4">
                                         <div class="bg-[#F9F9FB] dark:bg-[#20212a] p-3 rounded-xl border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)]">
-                                            <p class="text-[11px] font-bold text-[#9292C5] dark:text-[#a5a5d1] uppercase tracking-wider mb-1">ID Data</p>
-                                            <p class="text-[14px] font-[700] text-black dark:text-white">#{{ $row->id }}</p>
+                                            <p class="text-[11px] font-bold text-[#9292C5] dark:text-[#a5a5d1] uppercase tracking-wider mb-1">Perangkat</p>
+                                            <p class="text-[15px] font-[800] text-black dark:text-white">{{ $deviceName }}</p>
                                         </div>
                                         <div class="bg-[#F9F9FB] dark:bg-[#20212a] p-3 rounded-xl border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)]">
                                             <p class="text-[11px] font-bold text-[#9292C5] dark:text-[#a5a5d1] uppercase tracking-wider mb-1">Waktu</p>

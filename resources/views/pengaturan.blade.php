@@ -19,7 +19,16 @@
     }
 @endphp
 
-<div x-data="{ showGuide: false }" class="h-full">
+<div x-data="{ 
+    showGuide: false, 
+    amanVal: {{ $amanVal }}, 
+    waspadaVal: {{ $waspadaVal }}, 
+    bahayaVal: {{ $bahayaVal }},
+    get totalVal() { 
+        let sum = (Number(this.amanVal) || 0) + (Number(this.waspadaVal) || 0) + (Number(this.bahayaVal) || 0);
+        return sum === 0 ? 1 : sum;
+    }
+}" class="h-full">
 <form action="{{ route('pengaturan.threshold') }}" method="POST" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm mb-[24px] transition-colors duration-300 animate-fade-in-up stagger-1">
     @csrf
     
@@ -62,9 +71,9 @@
     
     <!-- Progress Bar -->
     <div class="w-full h-[12px] rounded-full flex overflow-hidden mb-[16px]">
-        <div class="bg-[#6BBF6B]" style="width: 50%;"></div>
-        <div class="bg-[#D8C726]" style="width: 25%;"></div>
-        <div class="bg-[#e02424]" style="width: 25%; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);"></div>
+        <div class="bg-[#6BBF6B] transition-all duration-500" :style="`width: ${(Number(amanVal) / totalVal) * 100}%`"></div>
+        <div class="bg-[#D8C726] transition-all duration-500" :style="`width: ${(Number(waspadaVal) / totalVal) * 100}%`"></div>
+        <div class="bg-[#e02424] transition-all duration-500" :style="`width: ${(Number(bahayaVal) / totalVal) * 100}%; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);`"></div>
     </div>
     
     <div class="flex justify-between text-[13px] font-[700] mb-[32px] px-2">
@@ -79,7 +88,7 @@
             <h4 class="font-[800] text-[#6BBF6B] mb-1">Aman</h4>
             <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak > X cm</p>
             <div class="flex overflow-hidden rounded-[12px] bg-[#F9F9FB] dark:bg-[#2a2b36] border border-transparent focus-within:border-[#9292C5] focus-within:ring-2 focus-within:ring-[#9292C5]/20 transition-all duration-300">
-                <input type="number" name="batas_aman" value="{{ $amanVal }}" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <input type="number" name="batas_aman" x-model.number="amanVal" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
                 <div class="bg-[#9292C5] text-white px-[16px] py-[12px] font-[800] text-[14px] flex items-center">cm</div>
             </div>
         </div>
@@ -88,7 +97,7 @@
             <h4 class="font-[800] text-[#D8C726] mb-1">Siaga</h4>
             <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak <= Aman, > Bahaya</p>
             <div class="flex overflow-hidden rounded-[12px] bg-[#F9F9FB] dark:bg-[#2a2b36] border border-transparent focus-within:border-[#9292C5] focus-within:ring-2 focus-within:ring-[#9292C5]/20 transition-all duration-300">
-                <input type="number" name="batas_waspada" value="{{ $waspadaVal }}" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <input type="number" name="batas_waspada" x-model.number="waspadaVal" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
                 <div class="bg-[#9292C5] text-white px-[16px] py-[12px] font-[800] text-[14px] flex items-center">cm</div>
             </div>
         </div>
@@ -97,7 +106,7 @@
             <h4 class="font-[800] text-[#e02424] mb-1">Bahaya</h4>
             <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak <= X cm</p>
             <div class="flex overflow-hidden rounded-[12px] bg-[#F9F9FB] dark:bg-[#2a2b36] border border-transparent focus-within:border-[#9292C5] focus-within:ring-2 focus-within:ring-[#9292C5]/20 transition-all duration-300">
-                <input type="number" name="batas_bahaya" value="{{ $bahayaVal }}" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <input type="number" name="batas_bahaya" x-model.number="bahayaVal" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
                 <div class="bg-[#9292C5] text-white px-[16px] py-[12px] font-[800] text-[14px] flex items-center">cm</div>
             </div>
         </div>
@@ -115,29 +124,31 @@
     <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm flex flex-col transition-colors duration-300 h-full animate-fade-in-up stagger-2">
         <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white mb-[24px]">Konfigurasi Sensor</h3>
         
-        <div class="flex flex-col gap-[24px] flex-1">
-            <div>
-                <div class="flex items-center justify-between gap-4 mb-2">
-                    <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Tinggi Wadah (cm)</span>
-                    <input type="number" value="20" class="bg-[#F9F9FB] dark:bg-[#1a1b24] outline-none rounded-[12px] px-[16px] py-[10px] font-[800] text-[14px] w-[100px] text-black dark:text-white border border-transparent shadow-sm hover:shadow-md hover:bg-[#F3F3F3] focus:border-[#9292C5] focus:ring-2 focus:ring-[#9292C5]/20 transition-all duration-300 text-center">
+        <form action="{{ route('pengaturan.sensor') }}" method="POST" class="flex flex-col flex-1">
+            @csrf
+            <div class="flex flex-col gap-[24px] flex-1">
+                <div>
+                    <div class="flex items-center justify-between gap-4 mb-2">
+                        <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Tinggi Wadah (cm)</span>
+                        <input type="number" name="tinggi_wadah" value="{{ $sensorConfig['tinggi_wadah'] ?? 20 }}" class="bg-[#F9F9FB] dark:bg-[#1a1b24] outline-none rounded-[12px] px-[16px] py-[10px] font-[800] text-[14px] w-[100px] text-black dark:text-white border border-transparent shadow-sm hover:shadow-md hover:bg-[#F3F3F3] focus:border-[#9292C5] focus:ring-2 focus:ring-[#9292C5]/20 transition-all duration-300 text-center">
+                    </div>
+                    <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jarak dari sensor (atas) ke dasar wadah air.</p>
                 </div>
-                <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jarak dari sensor (atas) ke dasar wadah air.</p>
-            </div>
-            <div>
-                <div class="flex items-center justify-between gap-4 mb-2">
-                    <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Interval Baca (menit)</span>
-                    <input type="number" value="10" class="bg-[#F9F9FB] dark:bg-[#1a1b24] outline-none rounded-[12px] px-[16px] py-[10px] font-[800] text-[14px] w-[100px] text-black dark:text-white border border-transparent shadow-sm hover:shadow-md hover:bg-[#F3F3F3] focus:border-[#9292C5] focus:ring-2 focus:ring-[#9292C5]/20 transition-all duration-300 text-center">
+                <div>
+                    <div class="flex items-center justify-between gap-4 mb-2">
+                        <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Interval Baca (detik)</span>
+                        <input type="number" name="interval_baca" value="{{ $sensorConfig['interval_baca'] ?? 2 }}" class="bg-[#F9F9FB] dark:bg-[#1a1b24] outline-none rounded-[12px] px-[16px] py-[10px] font-[800] text-[14px] w-[100px] text-black dark:text-white border border-transparent shadow-sm hover:shadow-md hover:bg-[#F3F3F3] focus:border-[#9292C5] focus:ring-2 focus:ring-[#9292C5]/20 transition-all duration-300 text-center">
+                    </div>
+                    <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jeda waktu antar pembacaan data sensor.</p>
                 </div>
-                <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jeda waktu antar pembacaan data sensor.</p>
             </div>
-        </div>
 
-        <div class="flex justify-end mt-[32px]">
-            <!-- Simpan Button -->
-            <button class="bg-[#9292C5] text-white px-[28px] py-[10px] rounded-[12px] font-bold text-[14px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_16px_rgba(146,146,197,0.35)] shrink-0">
-                Simpan Sensor
-            </button>
-        </div>
+            <div class="flex justify-end mt-[32px]">
+                <button type="submit" class="bg-[#9292C5] text-white px-[28px] py-[10px] rounded-[12px] font-bold text-[14px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_16px_rgba(146,146,197,0.35)] shrink-0">
+                    Simpan Sensor
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Card Kontrol Aktuator -->
@@ -170,7 +181,7 @@
             <div class="flex items-start gap-4 bg-white dark:bg-[#1a1b24] p-4 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm transition-colors duration-300">
                 <!-- Toggle Switch Buzzer -->
                 <div @click="buzzer = !buzzer; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm mt-1 transition-colors duration-300 shrink-0" :class="buzzer ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
-                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="buzzer ? 'right-[3px]' : 'left-[3px]'"></div>
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] left-[3px] shadow-sm transition-transform duration-300 ease-in-out" :class="buzzer ? 'translate-x-[18px]' : 'translate-x-0'"></div>
                 </div>
                 <div>
                     <p class="font-[800] text-[14px] text-black dark:text-white mb-1 transition-colors duration-300">Alarm Buzzer</p>
@@ -181,7 +192,7 @@
             <div class="flex items-start gap-4 bg-white dark:bg-[#1a1b24] p-4 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm transition-colors duration-300">
                 <!-- Toggle Switch Pompa -->
                 <div @click="pompa = !pompa; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm mt-1 transition-colors duration-300 shrink-0" :class="pompa ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
-                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="pompa ? 'right-[3px]' : 'left-[3px]'"></div>
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] left-[3px] shadow-sm transition-transform duration-300 ease-in-out" :class="pompa ? 'translate-x-[18px]' : 'translate-x-0'"></div>
                 </div>
                 <div>
                     <p class="font-[800] text-[14px] text-black dark:text-white mb-1 transition-colors duration-300">Pompa Air</p>
@@ -192,7 +203,7 @@
             <div class="flex items-start gap-4 bg-white dark:bg-[#1a1b24] p-4 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm transition-colors duration-300">
                 <!-- Toggle Switch LED -->
                 <div @click="led = !led; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm mt-1 transition-colors duration-300 shrink-0" :class="led ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
-                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="led ? 'right-[3px]' : 'left-[3px]'"></div>
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] left-[3px] shadow-sm transition-transform duration-300 ease-in-out" :class="led ? 'translate-x-[18px]' : 'translate-x-0'"></div>
                 </div>
                 <div>
                     <p class="font-[800] text-[14px] text-black dark:text-white mb-1 transition-colors duration-300">Lampu LED</p>
