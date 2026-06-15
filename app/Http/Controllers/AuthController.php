@@ -74,6 +74,33 @@ class AuthController extends Controller
         return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login dengan akun yang baru saja Anda buat.');
     }
 
+    public function showForgotPassword()
+    {
+        return view('forgot-password');
+    }
+
+    public function processForgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'password' => [
+                'required', 
+                'confirmed',
+                Password::min(8)->letters()->mixedCase()->numbers()->symbols()
+            ]
+        ], [
+            'email.exists' => 'Email yang Anda masukkan tidak terdaftar di sistem kami.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok dengan password baru.',
+            'password' => 'Format password tidak valid (Harus mengandung huruf besar, kecil, angka, dan simbol).'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return redirect()->route('login')->with('success', 'Password berhasil diatur ulang! Silakan masuk dengan password baru Anda.');
+    }
+
     public function logout(Request $request)
     {
         Auth::logout();

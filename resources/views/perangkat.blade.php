@@ -2,55 +2,20 @@
 @section('title', 'Perangkat')
 
 @section('content')
-<div class="grid grid-cols-1 md:grid-cols-12 gap-[24px]">
-    <div class="col-span-12 md:col-span-5 flex flex-col gap-[24px]">
-        <!-- Online Card -->
-        @php
-            $onlineCount = 0;
-            foreach($devices as $d) {
-                $lastLog = \App\Models\SensorLog::where('device_id', $d->id)->latest('created_at')->first();
-                if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
-                    $onlineCount++;
-                }
+<div class="grid grid-cols-1 md:grid-cols-3 gap-[24px]">
+    <!-- Online Card -->
+    @php
+        $onlineCount = 0;
+        foreach($devices as $d) {
+            $lastLog = \App\Models\SensorLog::where('device_id', $d->id)->latest('created_at')->first();
+            if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
+                $onlineCount++;
             }
-        @endphp
-        <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[160px] transition-colors duration-300">
-            <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Perangkat Online</p>
-            <p class="text-[56px] font-[900] text-black dark:text-[#9292C5] text-right leading-none mt-2">{{ $onlineCount }}/{{ $devices->count() }}</p>
-        </div>
-        <!-- Rumus -->
-        <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm text-[#9292C5] dark:text-[#a5a5d1] font-[500] text-[14px] transition-colors duration-300">
-            <p class="text-[18px] font-bold tracking-tight text-black dark:text-white mb-[12px]">Rumus Perhitungan</p>
-            <p class="mb-[12px] opacity-80 italic">Mengukur jarak pantulan gelombang suara ke permukaan air</p>
-            <p class="font-[700] text-[#9292C5]">Level Air = Tinggi Sensor – Jarak Terukur</p>
-        </div>
-    </div>
-    
-    <div class="col-span-12 md:col-span-7">
-        <!-- Panduan -->
-        <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm h-full flex flex-col transition-colors duration-300">
-            <p class="text-[18px] font-bold tracking-tight text-black dark:text-white mb-[16px]">Panduan Koneksi NodeMCU</p>
-            <div class="text-[13px] text-black dark:text-[#d1d1d6] space-y-4">
-                <div>
-                    <p class="font-[800] mb-1">Topologi Koneksi</p>
-                    <ol class="list-decimal pl-4 space-y-1 text-[#333] dark:text-[#a5a5d1]">
-                        <li>Sensor HC-SR04 → NodeMCU ESP8266</li>
-                        <li>NodeMCU → WiFi Hotspot HP/Router</li>
-                        <li>Laptop (server) ← WiFi yang sama</li>
-                        <li>NodeMCU POST ke http://[IP_LAPTOP]:8000/api/sensor</li>
-                    </ol>
-                </div>
-                <div>
-                    <p class="font-[800] mb-1">Wiring HC-SR04</p>
-                    <div class="grid grid-cols-[100px__20px__1fr] text-[#333] dark:text-[#a5a5d1] space-y-1">
-                        <div class="font-[700]">VCC</div><div>→</div><div class="text-right">5V (NodeMCU VIN)</div>
-                        <div class="font-[700]">GND</div><div>→</div><div class="text-right">GND</div>
-                        <div class="font-[700]">TRIG</div><div>→</div><div class="text-right">D1 (GPIO5)</div>
-                        <div class="font-[700]">ECHO</div><div>→</div><div class="text-right">D2 (GPIO4) via Voltage Divider</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        }
+    @endphp
+    <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] shadow-sm flex flex-col justify-between h-[140px] modern-card animate-fade-in-up stagger-1">
+        <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Perangkat Online</p>
+        <p class="text-[56px] font-[900] text-black dark:text-[#9292C5] text-right leading-none mt-2">{{ $onlineCount }}/{{ $devices->count() }}</p>
     </div>
 </div>
 
@@ -97,8 +62,8 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-[24px] mt-[16px]">
-    @foreach($devices as $device)
-    <div x-data="{ isEditing: false, nama: '{{ $device->name }}', lokasi: '{{ $device->station ? $device->station->location : '-' }}' }" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col transition-colors duration-300">
+    @foreach($devices as $index => $device)
+    <div x-data="{ isEditing: false, nama: '{{ $device->name }}', lokasi: '{{ $device->station ? $device->station->location : '-' }}' }" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] md:p-[24px] shadow-sm flex flex-col modern-card animate-fade-in-up" style="animation-delay: {{ 0.3 + ($index * 0.1) }}s">
         <div class="flex justify-between items-start mb-[4px]">
             <template x-if="!isEditing">
                 <h3 class="font-bold tracking-tight text-[20px] text-black dark:text-white" x-text="nama"></h3>
@@ -149,7 +114,7 @@
 </div>
 
 <!-- Error Logs Section -->
-<div class="mt-[32px] bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm transition-colors duration-300">
+<div class="mt-[32px] bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] md:p-[24px] shadow-sm modern-card animate-fade-in-up stagger-5">
     <div class="flex items-center gap-3 mb-[20px]">
         <div class="w-10 h-10 rounded-full bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.1)] flex items-center justify-center text-[#e02424]">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>

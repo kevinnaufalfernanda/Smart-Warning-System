@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - FloodGuard</title>
+    <title>Lupa Password - FloodGuard</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
@@ -23,34 +23,7 @@
         .animate-blob { animation: blob 15s infinite alternate ease-in-out; }
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
-        
-        /* Checkbox kustom agar centangnya dipaksa putih (bukan hitam bawaan chrome) */
-        .custom-checkbox {
-            appearance: none;
-            -webkit-appearance: none;
-            background-color: transparent;
-            border: 2px solid #C8C8E1;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .custom-checkbox:checked {
-            background-color: #9292C5;
-            border-color: #9292C5;
-        }
-        .custom-checkbox:checked::after {
-            content: '';
-            width: 5px;
-            height: 10px;
-            border: solid white;
-            border-width: 0 2.5px 2.5px 0;
-            transform: rotate(45deg);
-            margin-bottom: 2px;
-        }
 
-        /* Fix Chrome Autofill 'Belang' issue (memaksa bg menjadi putih) */
         input:-webkit-autofill,
         input:-webkit-autofill:hover, 
         input:-webkit-autofill:focus, 
@@ -74,9 +47,9 @@
     <div class="w-full max-w-[500px] bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[32px] p-[48px] md:p-[56px] mx-4 z-10 relative overflow-hidden shadow-[0_20px_60px_rgba(146,146,197,0.25)]">
         
         <!-- Header Logo -->
-        <div class="text-center mb-[48px] mt-[8px]">
-            <h1 class="text-[38px] text-[#9292C5] tracking-wide mb-[6px]" style="font-weight: 300;">FloodGuard</h1>
-            <p class="text-[#9292C5] font-normal text-[14px] opacity-70">IoT Smart Flood Warning System</p>
+        <div class="text-center mb-[40px] mt-[8px]">
+            <h1 class="text-[32px] text-[#9292C5] tracking-wide mb-[6px]" style="font-weight: 300;">Reset Password</h1>
+            <p class="text-[#9292C5] font-normal text-[13px] opacity-70">Masukkan email dan password baru Anda.</p>
         </div>
 
         @if (session('success'))
@@ -95,48 +68,34 @@
             </div>
         @endif
 
-        <form action="{{ route('login.process') }}" method="POST" class="flex flex-col gap-[24px] text-left">
+        <form action="{{ route('forgot-password.process') }}" method="POST" class="flex flex-col gap-[20px] text-left">
             @csrf
+            
             <!-- Input Email -->
             <div class="flex flex-col gap-[8px]">
-                <label class="text-[13px] font-semibold text-[#9292C5] flex items-center gap-[8px]">
-                    <svg class="w-[16px] h-[16px]" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                    Email
-                </label>
-                <input type="email" name="email" value="{{ old('email') }}" placeholder="admin@test.com" required class="w-full bg-[#F3F3F9] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-[#333] outline-none placeholder-[#aaa] border border-[#E0E0ED] focus:border-[#9292C5] focus:bg-white focus:ring-4 focus:ring-[#9292C5]/20 transition-all shadow-sm">
+                <label class="text-[13px] font-semibold text-[#9292C5]">Email Akun</label>
+                <input type="email" name="email" value="{{ old('email') }}" placeholder="admin@gmail.com" required class="w-full bg-[#F3F3F9] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-[#333] outline-none placeholder-[#aaa] border border-[#E0E0ED] focus:border-[#9292C5] focus:bg-white focus:ring-4 focus:ring-[#9292C5]/20 transition-all shadow-sm">
             </div>
 
-            <!-- Input Password -->
+            <!-- Input New Password -->
             <div class="flex flex-col gap-[8px]">
-                <label class="text-[13px] font-semibold text-[#9292C5] flex items-center gap-[8px]">
-                    <svg class="w-[16px] h-[16px]" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                    Password
-                </label>
+                <label class="text-[13px] font-semibold text-[#9292C5]">Password Baru</label>
                 <input type="password" name="password" placeholder="••••••••••••" required class="w-full bg-[#F3F3F9] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-[#333] outline-none placeholder-[#aaa] border border-[#E0E0ED] focus:border-[#9292C5] focus:bg-white focus:ring-4 focus:ring-[#9292C5]/20 transition-all shadow-sm">
             </div>
 
-            <!-- Ingat saya & Lupa Password -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-[8px]">
-                    <input type="checkbox" name="remember" checked class="custom-checkbox w-[18px] h-[18px] shrink-0">
-                    <span class="text-[13px] font-medium text-[#9292C5]">Ingat saya</span>
-                </div>
-                <a href="{{ route('forgot-password') }}" class="text-[13px] font-semibold text-[#9292C5] hover:text-[#8585b8] hover:underline transition-colors">
-                    Lupa password?
-                </a>
+            <!-- Input Confirm Password -->
+            <div class="flex flex-col gap-[8px]">
+                <label class="text-[13px] font-semibold text-[#9292C5]">Konfirmasi Password</label>
+                <input type="password" name="password_confirmation" placeholder="••••••••••••" required class="w-full bg-[#F3F3F9] rounded-[12px] px-[18px] py-[14px] text-[14px] font-semibold text-[#333] outline-none placeholder-[#aaa] border border-[#E0E0ED] focus:border-[#9292C5] focus:bg-white focus:ring-4 focus:ring-[#9292C5]/20 transition-all shadow-sm">
             </div>
 
             <!-- Submit -->
-            <div class="text-center mt-[8px]">
-                <button type="submit" class="w-[70%] bg-[#9292C5] text-white py-[14px] rounded-[14px] font-bold text-[15px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_20px_rgba(146,146,197,0.4)]">
-                    Masuk
+            <div class="text-center mt-[12px]">
+                <button type="submit" class="w-full bg-[#9292C5] text-white py-[14px] rounded-[14px] font-bold text-[15px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_20px_rgba(146,146,197,0.4)]">
+                    Simpan Password Baru
                 </button>
-                <p class="text-[13px] font-medium text-[#999] mt-[16px] flex items-center justify-center gap-[6px]">
-                    Belum punya akun? <a href="{{ route('register') }}" class="text-[#9292C5] hover:underline font-semibold">Daftar</a>
-                </p>
-                <p class="text-[12px] font-medium text-[#999] mt-[8px] flex items-center justify-center gap-[6px]">
-                    <span class="w-[8px] h-[8px] bg-[#333] rounded-full inline-block"></span>
-                    Sistem Monitoring Banjir IoT v1.0
+                <p class="text-[13px] font-medium text-[#999] mt-[20px] flex items-center justify-center gap-[6px]">
+                    Kembali ke halaman <a href="{{ route('login') }}" class="text-[#9292C5] hover:underline font-semibold">Login</a>
                 </p>
             </div>
         </form>
@@ -161,10 +120,8 @@
                 
                 for(let i=0; i<count; i++) {
                     let theta = (i / count) * Math.PI * 2;
-                    
-                    // Warna sesuai tema: Biru-Ungu elegan (berkisar Hue 230-260)
                     let hue = 235 + (theta / (Math.PI * 2)) * 25; 
-                    let lightness = 60 + Math.random() * 15; // 60% - 75%
+                    let lightness = 60 + Math.random() * 15;
                     
                     particles.push({
                         baseRadius: radius,
@@ -192,29 +149,20 @@
                 let waveOffset = Math.sin(p.theta * 6 - time * 2) * 15;
                 let currentRadius = p.baseRadius + waveOffset;
                 
-                // --- EFEK CUBIT (Pinch / Tarik ke dalam) ---
-                let bulgeRadius = 150; // Radius efek cembung
-                let sizeMult = 1; // Pengali ukuran bintik
+                let bulgeRadius = 150; 
+                let sizeMult = 1; 
                 
                 if (currentRadius < bulgeRadius) {
-                    // Semakin dekat dengan kursor, semakin kuat efeknya
                     let bulgeStrength = Math.pow((bulgeRadius - currentRadius) / bulgeRadius, 1.5); 
-                    
-                    // Tarik partikel KE DALAM (mendekati kursor) menciptakan efek cubitan (pinch)
                     currentRadius -= bulgeStrength * 80; 
-                    // Kasih jarak di tengah kursor (Hollow Core / Mata Pusaran)
                     if (currentRadius < 35) currentRadius = 35; 
                     
-                    // User request: Hilangkan efek membesar (gede), biarkan ukuran normal
                     sizeMult = 1; 
                 }
-                // ------------------------------------------
 
                 let targetX = mouse.x + Math.cos(p.theta) * currentRadius;
                 let targetY = mouse.y + Math.sin(p.theta) * currentRadius;
                 
-                // Efek "Nyusul" (Trailing Delay / Slinky): 
-                // Bintik di tengah bergerak cepat mengikuti kursor, sedangkan yang di pinggir tertinggal dan menyusul pelan-pelan
                 let ease = Math.max(0.015, 0.12 - (p.baseRadius * 0.00025)); 
                 
                 p.x += (targetX - p.x) * ease;
@@ -223,10 +171,8 @@
                 let distFromCursor = Math.sqrt(Math.pow(p.x - mouse.x, 2) + Math.pow(p.y - mouse.y, 2));
                 let maxDist = 400; 
                 
-                // Fade Out (hilang perlahan saat menjauh)
                 let outerOpacity = Math.max(0, 1 - (distFromCursor / maxDist));
                 
-                // Fade In (transparan di pusat kursor agar tidak menumpuk tebal di tengah)
                 let innerFadeDist = 60;
                 let innerOpacity = Math.min(1, Math.max(0, (distFromCursor - 25) / innerFadeDist));
                 
@@ -234,9 +180,7 @@
                 
                 if (opacity > 0.01) {
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.baseSize * sizeMult, 0, Math.PI * 2); // Terapkan ukuran cembung
-                    
-                    // Terapkan opacity ke warna string
+                    ctx.arc(p.x, p.y, p.baseSize * sizeMult, 0, Math.PI * 2); 
                     ctx.fillStyle = p.colorStr.replace(')', `, ${opacity})`).replace('hsl', 'hsla');
                     ctx.fill();
                 }

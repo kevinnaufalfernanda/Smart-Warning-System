@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Services\NotificationService;
@@ -39,6 +40,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'processLogin'])->name('login.process');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'processRegister'])->name('register.process');
+    
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('forgot-password');
+    Route::post('/forgot-password', [AuthController::class, 'processForgotPassword'])->name('forgot-password.process');
 });
 
 Route::middleware('auth')->group(function () {
@@ -47,21 +51,38 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         $totalData = SensorLog::count();
         $totalPeringatan = SensorLog::whereIn('flood_status', ['BAHAYA', 'WASPADA'])->count();
-        $notifikasi = AlertHistory::orderBy('id', 'desc')->take(5)->get();
+        $notifikasi = AlertHistory::orderBy('id', 'desc')->take(3)->get();
         
-        $totalPerangkat = Device::count() ?: 1; // Fallback jika belum ada device
+        $devices = Device::all();
+        $totalPerangkat = $devices->count();
+        
+        $onlineCount = 0;
+        foreach($devices as $d) {
+            $lastLog = SensorLog::where('device_id', $d->id)->latest('created_at')->first();
+            if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
+                $onlineCount++;
+            }
+        }
+        
+        $actuatorStates = Cache::get('actuator_states', [
+            'buzzer' => true,
+            'pompa' => true,
+            'led' => true
+        ]);
         
         return view('dashboard', [
             'totalData' => $totalData,
             'totalPeringatan' => $totalPeringatan,
             'totalPerangkat' => $totalPerangkat,
-            'notifikasi' => $notifikasi
+            'onlineCount' => $onlineCount,
+            'notifikasi' => $notifikasi,
+            'actuatorStates' => $actuatorStates
         ]);
     })->name('dashboard');
 
     Route::get('/peringatan', function () {
         $peringatan = SensorLog::with('device.station')
-                        ->whereIn('flood_status', ['BAHAYA', 'WASPADA'])
+                        ->whereIn('flood_status', ['BAHAYA', 'WASPADA', 'AMAN'])
                         ->orderBy('id', 'desc')
                         ->take(200)
                         ->get();
@@ -129,7 +150,12 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/pengaturan', function () {
         $stations = \App\Models\Station::with('thresholds')->get();
-        return view('pengaturan', ['stations' => $stations]);
+        $actuatorStates = Cache::get('actuator_states', [
+            'buzzer' => true,
+            'pompa' => true,
+            'led' => true
+        ]);
+        return view('pengaturan', ['stations' => $stations, 'actuatorStates' => $actuatorStates]);
     })->name('pengaturan');
 
     Route::post('/pengaturan/threshold', function (Request $request) {
@@ -337,4 +363,41 @@ Route::post('/api/trigger-notif', function (Request $request) {
         ]
     ]);
 })->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
+// --- API Aktuator untuk IoT ---
+Route::get('/api/actuators', function() {
+    $states = Cache::get('actuator_states', [
+        'buzzer' => true,
+        'pompa' => true,
+        'led' => true
+    ]);
+    return response()->json($states);
+});
+
+Route::post('/api/actuators', function(Request $request) {
+    $states = Cache::get('actuator_states', [
+        'buzzer' => true,
+        'pompa' => true,
+        'led' => true
+    ]);
+    
+    if ($request->has('buzzer')) $states['buzzer'] = filter_var($request->buzzer, FILTER_VALIDATE_BOOLEAN);
+    if ($request->has('pompa')) $states['pompa'] = filter_var($request->pompa, FILTER_VALIDATE_BOOLEAN);
+    if ($request->has('led')) $states['led'] = filter_var($request->led, FILTER_VALIDATE_BOOLEAN);
+    
+    Cache::put('actuator_states', $states);
+    
+    return response()->json(['success' => true, 'states' => $states]);
+})->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
+Route::post('/api/actuators/reset', function() {
+    $states = [
+        'buzzer' => true,
+        'pompa' => true,
+        'led' => true
+    ];
+    Cache::put('actuator_states', $states);
+    return response()->json(['success' => true, 'message' => 'Actuators reset to defaults (ON)', 'states' => $states]);
+})->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 

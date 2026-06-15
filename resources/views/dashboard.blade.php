@@ -4,18 +4,19 @@
 @section('content')
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-[24px] pb-4 items-start" x-data="dashboardWidget()">
     
-    <!-- Left Column: Status Air -->
-    <div class="col-span-1 xl:col-span-5 flex flex-col items-stretch">
-        <div class="bg-[#F3F3F3] dark:bg-[#20212a] rounded-[24px] p-[28px] md:p-[32px] flex flex-col relative h-full border border-transparent dark:border-[rgba(255,255,255,0.05)] transition-colors duration-300">
+    <!-- Left Column -->
+    <div class="col-span-1 xl:col-span-5 flex flex-col gap-[24px] items-stretch animate-fade-in-up stagger-1">
+        <!-- Status Air Card -->
+        <div class="bg-[#F3F3F3] dark:bg-[#20212a] rounded-[24px] p-[24px] md:p-[28px] flex flex-col relative border border-transparent dark:border-[rgba(255,255,255,0.05)] modern-card">
             
             <!-- Header -->
-            <div class="flex justify-between items-start relative z-50 w-full mb-[8px]">
+            <div class="flex justify-between items-start relative z-50 w-full mb-[4px]">
                 <div>
-                    <h3 class="text-[22px] font-bold tracking-tight mb-[12px] text-black dark:text-white">Status Air</h3>
+                    <h3 class="text-[20px] font-bold tracking-tight mb-[10px] text-black dark:text-white">Status Air</h3>
                     
                     <!-- EWS Dropdown -->
                     <div class="relative inline-block mb-[12px] z-[100]">
-                        <button @click="open = !open" @click.outside="open = false" class="bg-[#E5E5EF] dark:bg-[rgba(255,255,255,0.05)] text-[#555] dark:text-[#a5a5d1] px-[16px] py-[6px] rounded-[10px] text-[13px] font-bold flex items-center gap-2 hover:bg-[#d8d8e8] dark:hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer border border-[#d0d0e0] dark:border-[rgba(255,255,255,0.08)]">
+                        <button @click="open = !open" @click.outside="open = false" class="bg-[#9292C5] text-white px-[16px] py-[8px] rounded-[12px] text-[13px] font-bold flex items-center gap-2 hover:bg-[#8585b8] hover:shadow-md transition-all duration-300 cursor-pointer border border-transparent shadow-sm">
                             <span x-text="device.name">EWS 1</span>
                             <svg class="w-3.5 h-3.5 transition-transform duration-300" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
@@ -37,10 +38,10 @@
             </div>
 
             <!-- Ring Gauge -->
-            <div class="flex-1 flex flex-col items-center justify-center z-10 w-full mt-[24px] mb-[8px]">
-                <div class="relative flex items-center justify-center w-[180px] h-[180px] md:w-[200px] md:h-[200px]">
+            <div class="flex-1 flex flex-col items-center justify-center z-10 w-full mt-[16px] mb-[4px]">
+                <div class="relative flex items-center justify-center w-[160px] h-[160px] md:w-[180px] md:h-[180px]">
                     <!-- Ring Circle (outline style like mockup) -->
-                    <div class="absolute inset-0 rounded-full border-[8px] transition-colors duration-500" :style="`border-color: ${getColor()}`"></div>
+                    <div class="absolute inset-0 rounded-full border-[8px] transition-all duration-500" :style="`border-color: ${getColor()}; box-shadow: 0 0 20px ${getColor()}40 inset, 0 0 20px ${getColor()}40;`"></div>
                     <!-- Inner content -->
                     <div class="flex flex-col items-center justify-center">
                         <div class="flex items-baseline">
@@ -49,7 +50,7 @@
                         </div>
                     </div>
                 </div>
-                <p class="text-[28px] md:text-[32px] font-[900] mt-[16px] tracking-wide transition-colors duration-500 z-10" :style="`color: ${getColor()}`" x-text="device.status">Aman</p>
+                <p class="text-[26px] md:text-[28px] font-[900] mt-[12px] tracking-wide transition-colors duration-500 z-10" :style="`color: ${getColor()}`" x-text="device.status">Aman</p>
             </div>
             
             <!-- Real Chart Area -->
@@ -70,55 +71,68 @@
             </div>
 
         </div>
+
     </div>
 
     <!-- Right Column -->
     <div class="col-span-1 xl:col-span-7 flex flex-col gap-[24px]">
         
         <!-- 4 Stat Cards: 2x2 Grid -->
-        <div class="grid grid-cols-2 gap-[24px]">
+        <div class="grid grid-cols-2 gap-[20px]">
             <!-- Cuaca Card -->
-            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[160px] transition-colors duration-300 relative">
+            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] flex flex-col justify-between h-[130px] modern-card relative animate-fade-in-up stagger-2">
                 <div class="flex justify-between items-start">
                     <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Cuaca</p>
-                    <a href="#" class="text-[#9292C5] hover:text-[#7b7bb2] transition-colors">
+                    <a href="https://www.bmkg.go.id/" target="_blank" rel="noopener noreferrer" title="Buka website BMKG" class="text-[#9292C5] hover:text-[#7b7bb2] transition-colors">
                         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </a>
                 </div>
-                <div class="flex items-center justify-center flex-1">
-                    <!-- Cerah Icon -->
-                    <template x-if="device.statusHujan !== 'Hujan'">
-                        <svg class="w-14 h-14 text-[#555] dark:text-[#a5a5d1]" fill="currentColor" viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
-                    </template>
-                    <template x-if="device.statusHujan === 'Hujan'">
-                        <svg class="w-14 h-14 text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21v-4m-4 2v-4m8 2v-4"></path></svg>
-                    </template>
+                <div class="flex items-center justify-center gap-[16px] flex-1">
+                    <!-- Icon Container -->
+                    <div class="shrink-0">
+                        <!-- Cerah Icon -->
+                        <template x-if="device.statusHujan !== 'Hujan'">
+                            <svg class="w-[46px] h-[46px] drop-shadow-[0_6px_12px_rgba(245,158,11,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="5" fill="#f59e0b" fill-opacity="0.25" stroke="#f59e0b" stroke-width="2.2"/>
+                                <path d="M12 2V4M12 20V22M4 12H2M22 12H20M5.636 5.636L7.05 7.05M18.364 18.364L16.95 16.95M5.636 18.364L7.05 16.95M18.364 5.636L16.95 7.05" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                        </template>
+                        <template x-if="device.statusHujan === 'Hujan'">
+                            <svg class="w-[46px] h-[46px] text-[#9292C5] drop-shadow-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                                <path d="M8 14v4"></path>
+                                <path d="M12 16v4"></path>
+                                <path d="M16 14v4"></path>
+                            </svg>
+                        </template>
+                    </div>
+                    <!-- Text Container -->
+                    <p class="text-[28px] font-[900] text-black dark:text-white leading-none" x-text="device.statusHujan">Cerah</p>
                 </div>
-                <p class="text-[16px] font-bold text-black dark:text-white text-center" x-text="device.statusHujan">Cerah</p>
             </div>
 
             <!-- Perangkat Card -->
-            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[160px] transition-colors duration-300">
-                <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Perangkat</p>
-                <p class="text-[56px] font-[900] text-black dark:text-white text-right leading-none">{{ $totalPerangkat }}/3</p>
+            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] flex flex-col justify-between h-[130px] modern-card animate-fade-in-up stagger-3">
+                <p class="text-[16px] font-bold tracking-tight text-black dark:text-white">Perangkat</p>
+                <p class="text-[48px] font-[900] text-black dark:text-white text-right leading-none">{{ $onlineCount }}/{{ $totalPerangkat }}</p>
             </div>
 
             <!-- Data Card -->
-            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[160px] transition-colors duration-300">
-                <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Data</p>
-                <p class="text-[56px] font-[900] text-black dark:text-white text-right leading-none">{{ $totalData }}</p>
+            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] flex flex-col justify-between h-[130px] modern-card animate-fade-in-up stagger-4">
+                <p class="text-[16px] font-bold tracking-tight text-black dark:text-white">Data</p>
+                <p class="text-[48px] font-[900] text-black dark:text-white text-right leading-none">{{ $totalData }}</p>
             </div>
 
             <!-- Peringatan Card -->
-            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] shadow-sm flex flex-col justify-between h-[160px] transition-colors duration-300">
-                <p class="text-[18px] font-bold tracking-tight text-black dark:text-white">Peringatan</p>
-                <p class="text-[56px] font-[900] text-black dark:text-white text-right leading-none">{{ $totalPeringatan }}</p>
+            <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] flex flex-col justify-between h-[130px] modern-card animate-fade-in-up stagger-5">
+                <p class="text-[16px] font-bold tracking-tight text-black dark:text-white">Peringatan</p>
+                <p class="text-[48px] font-[900] text-black dark:text-white text-right leading-none">{{ $totalPeringatan }}</p>
             </div>
         </div>
 
         <!-- Notifikasi Terkini -->
-        <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] md:p-[28px] flex flex-col transition-colors duration-300 flex-1 relative z-10">
-            <h3 class="text-[22px] font-bold tracking-tight mb-[20px] text-black dark:text-white">Notifikasi Terkini</h3>
+        <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[20px] md:p-[24px] flex flex-col flex-1 relative z-10 modern-card animate-fade-in-up stagger-6">
+            <h3 class="text-[20px] font-bold tracking-tight mb-[16px] text-black dark:text-white">Notifikasi Terkini</h3>
             
             <div class="flex flex-col gap-[12px] flex-1 w-full max-w-full">
                 @forelse($notifikasi as $notif)
@@ -148,7 +162,7 @@
             </div>
 
             <div class="flex justify-end mt-[16px]">
-                <a href="/peringatan" class="text-[#9292C5] font-semibold text-[13px] hover:underline transition-all">
+                <a href="/peringatan" class="text-[#9292C5] border border-[#9292C5] px-4 py-1.5 rounded-[10px] font-bold text-[13px] hover:bg-[#9292C5] hover:text-white transition-all shadow-sm">
                     Selengkapnya
                 </a>
             </div>
@@ -156,13 +170,69 @@
 
     </div>
 
+    <!-- Card Kontrol Aktuator (Sync with Pengaturan) - Full Width -->
+    <div class="col-span-1 xl:col-span-12 bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[24px] md:p-[28px] shadow-sm flex flex-col transition-colors duration-300 modern-card animate-fade-in-up stagger-7"
+         x-data="{
+             buzzer: {{ $actuatorStates['buzzer'] ? 'true' : 'false' }},
+             pompa: {{ $actuatorStates['pompa'] ? 'true' : 'false' }},
+             led: {{ $actuatorStates['led'] ? 'true' : 'false' }},
+             isSaving: false,
+             saveActuators() {
+                 this.isSaving = true;
+                 fetch('/api/actuators', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ buzzer: this.buzzer, pompa: this.pompa, led: this.led })
+                 })
+                 .then(res => res.json())
+                 .then(data => {
+                     this.isSaving = false;
+                 })
+                 .catch(err => {
+                     this.isSaving = false;
+                     console.error('Gagal menghubungi server!');
+                 });
+             }
+         }">
+        <h3 class="text-[20px] font-bold tracking-tight text-black dark:text-white mb-[20px]">Kontrol Aktuator Live</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-[20px]">
+            <div class="flex items-center justify-between bg-white dark:bg-[#1a1b24] p-5 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm">
+                <div>
+                    <p class="font-[800] text-[15px] text-black dark:text-white mb-1">Alarm Buzzer</p>
+                    <p class="text-[13px] font-[600] text-[#a5a5d1]">Berbunyi saat bahaya</p>
+                </div>
+                <div @click="buzzer = !buzzer; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm transition-colors duration-300 shrink-0" :class="buzzer ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="buzzer ? 'right-[3px]' : 'left-[3px]'"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-white dark:bg-[#1a1b24] p-5 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm">
+                <div>
+                    <p class="font-[800] text-[15px] text-black dark:text-white mb-1">Pompa Air</p>
+                    <p class="text-[13px] font-[600] text-[#a5a5d1]">Menyedot air otomatis</p>
+                </div>
+                <div @click="pompa = !pompa; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm transition-colors duration-300 shrink-0" :class="pompa ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="pompa ? 'right-[3px]' : 'left-[3px]'"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-white dark:bg-[#1a1b24] p-5 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm">
+                <div>
+                    <p class="font-[800] text-[15px] text-black dark:text-white mb-1">Lampu LED</p>
+                    <p class="text-[13px] font-[600] text-[#a5a5d1]">Indikator visual</p>
+                </div>
+                <div @click="led = !led; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm transition-colors duration-300 shrink-0" :class="led ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="led ? 'right-[3px]' : 'left-[3px]'"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- In-App Toast Notification (Bottom Right) -->
     <div x-show="showToast" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-y-10 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-10 opacity-0" style="display: none;" class="fixed bottom-[30px] right-[30px] bg-white dark:bg-[#20212a] border-l-[4px] shadow-[0_10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-[16px] p-4 z-[9999] flex items-start gap-4 max-w-sm w-full" :class="toastBorderColor">
-        <div class="p-2 rounded-full mt-0.5 shrink-0" :class="toastIconBg">
-            <svg class="w-5 h-5" :class="toastIconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-        </div>
         <div class="flex-1 pt-0.5">
-            <h4 class="font-[800] text-[15px] mb-[2px] tracking-tight" :class="toastTitleColor" x-text="toastTitle">🚨 PERINGATAN DINI!</h4>
+            <h4 class="font-[800] text-[15px] mb-[2px] tracking-tight" :class="toastTitleColor" x-text="toastTitle">ðŸš¨ PERINGATAN DINI!</h4>
             <p class="text-[13px] text-black dark:text-[#a5a5d1] font-[600] leading-snug" x-text="toastMessage"></p>
         </div>
         <button @click="showToast = false" class="text-gray-400 hover:text-black dark:hover:text-white shrink-0 transition-colors">
@@ -208,7 +278,7 @@
             },
             getRainColor() {
                 let status = this.device.statusHujan;
-                if (status === 'Hujan') return '#3B82F6';
+                if (status === 'Hujan') return '#9292C5';
                 if (status === 'Menunggu') return '#9292C5';
                 return '#6BBF6B';
             },
@@ -293,8 +363,8 @@
                                     border: 'border-[#f59e0b]', iconBg: 'bg-[#fef3c7] dark:bg-[rgba(245,158,11,0.15)]', iconColor: 'text-[#d97706] dark:text-[#f59e0b]', titleColor: 'text-[#f59e0b]'
                                 });
                             } else if (this.device.statusHujan === 'Hujan' && this.lastRainStatus !== 'Hujan') {
-                                triggerNotif('🌧️ PERINGATAN CUACA!', `Terdeteksi hujan turun. Jarak Air: ${jarak}cm. Pantau terus ketinggian air.`, {
-                                    border: 'border-[#3B82F6]', iconBg: 'bg-[#dbeafe] dark:bg-[rgba(59,130,246,0.15)]', iconColor: 'text-[#2563eb] dark:text-[#3B82F6]', titleColor: 'text-[#3B82F6]'
+                                triggerNotif('PERINGATAN CUACA!', `Terdeteksi hujan turun. Jarak Air: ${jarak}cm. Pantau terus ketinggian air.`, {
+                                    border: 'border-[#9292C5]', iconBg: 'bg-[#E5E5EF] dark:bg-[rgba(146,146,197,0.15)]', iconColor: 'text-[#7b7bb2] dark:text-[#9292C5]', titleColor: 'text-[#9292C5]'
                                 });
                             }
                             

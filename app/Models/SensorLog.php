@@ -10,6 +10,7 @@ class SensorLog extends Model
     use HasFactory;
 
     public $timestamps = false; // Only using created_at
+    protected $table = 'sensor_data';
     protected $guarded = [];
 
     public function device()

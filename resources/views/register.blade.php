@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Daftar - FloodGuard</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=poppins:300,400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>
     @endif
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #E5E5EF; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #E5E5EF; }
         
         .custom-checkbox {
             appearance: none;
@@ -53,7 +53,7 @@
         
         <!-- Header Logo -->
         <div class="text-center mb-[32px] mt-[8px]">
-            <h1 class="text-[38px] font-light text-[#9292C5] tracking-wide mb-[6px]" style="font-weight: 300;">FloodGuard</h1>
+            <h1 class="text-[38px] text-[#9292C5] tracking-wide mb-[6px]" style="font-weight: 300;">FloodGuard</h1>
             <p class="text-[#9292C5] font-normal text-[14px] opacity-70">Daftar Akun Baru</p>
         </div>
 

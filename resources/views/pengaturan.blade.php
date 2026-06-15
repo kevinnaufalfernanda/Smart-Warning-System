@@ -19,7 +19,8 @@
     }
 @endphp
 
-<form action="{{ route('pengaturan.threshold') }}" method="POST" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm mb-[24px] transition-colors duration-300">
+<div x-data="{ showGuide: false }" class="h-full">
+<form action="{{ route('pengaturan.threshold') }}" method="POST" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm mb-[24px] transition-colors duration-300 animate-fade-in-up stagger-1">
     @csrf
     
     @if(session('success'))
@@ -35,14 +36,27 @@
 
     <!-- Header with EWS selector -->
     <div class="flex justify-between items-center mb-[24px]">
-        <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white">Konfigurasi Threshold</h3>
+        <div class="flex items-center gap-4">
+            <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white">Konfigurasi Threshold</h3>
+            <button type="button" @click="showGuide = true" class="bg-[#9292C5]/10 text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/20 px-[16px] py-[6px] rounded-[10px] text-[12px] font-bold flex items-center gap-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Panduan & Rumus
+            </button>
+        </div>
         <!-- EWS Dropdown Selector -->
-        <div class="relative z-20">
-            <select name="station_id" class="bg-[#9292C5] text-white px-[16px] py-[6px] rounded-[10px] text-[13px] font-bold flex items-center gap-2 hover:bg-[#8585b8] transition-colors cursor-pointer shadow-sm outline-none border-none">
+        <div class="relative z-20 flex items-center" x-data="{ dropdownOpen: false, selectedStationId: '{{ $selectedStation ? $selectedStation->id : '' }}', selectedStationName: '{{ $selectedStation ? $selectedStation->name : 'Pilih EWS' }}' }">
+            <input type="hidden" name="station_id" x-model="selectedStationId">
+            <button type="button" @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="bg-[#9292C5] text-white pl-[20px] pr-[16px] py-[8px] rounded-[12px] text-[13px] font-[700] hover:bg-[#8585b8] hover:shadow-md transition-all duration-300 cursor-pointer shadow-sm outline-none border border-transparent flex items-center gap-3 min-w-[120px] justify-between">
+                <span x-text="selectedStationName"></span>
+                <svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div x-show="dropdownOpen" x-transition class="absolute right-0 top-full mt-2 w-full min-w-[140px] bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] rounded-[16px] shadow-lg py-2 z-50">
                 @foreach($stations as $station)
-                    <option value="{{ $station->id }}">{{ $station->name }}</option>
+                <button type="button" @click="selectedStationId = '{{ $station->id }}'; selectedStationName = '{{ $station->name }}'; dropdownOpen = false" class="w-full text-left px-[20px] py-[8px] text-[13px] font-[600] text-[#555] dark:text-[#a5a5d1] hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+                    {{ $station->name }}
+                </button>
                 @endforeach
-            </select>
+            </div>
         </div>
     </div>
     
@@ -61,30 +75,30 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-[24px]">
         <!-- Aman Input -->
-        <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm transition-colors duration-300">
+        <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm hover:shadow-md hover:border-[#9292C5] transition-all duration-300">
             <h4 class="font-[800] text-[#6BBF6B] mb-1">Aman</h4>
             <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak > X cm</p>
-            <div class="flex overflow-hidden rounded-[8px] bg-[#E5E5EF]/60 dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-                <input type="number" name="batas_aman" value="{{ $amanVal }}" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
-                <div class="bg-[#C8C8E1] dark:bg-[rgba(255,255,255,0.05)] px-4 py-[10px] text-black dark:text-white font-[800] text-[14px]">cm</div>
+            <div class="flex overflow-hidden rounded-[12px] bg-[#F9F9FB] dark:bg-[#2a2b36] border border-transparent focus-within:border-[#9292C5] focus-within:ring-2 focus-within:ring-[#9292C5]/20 transition-all duration-300">
+                <input type="number" name="batas_aman" value="{{ $amanVal }}" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <div class="bg-[#9292C5] text-white px-[16px] py-[12px] font-[800] text-[14px] flex items-center">cm</div>
             </div>
         </div>
         <!-- Siaga Input -->
-        <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm transition-colors duration-300">
+        <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm hover:shadow-md hover:border-[#9292C5] transition-all duration-300">
             <h4 class="font-[800] text-[#D8C726] mb-1">Siaga</h4>
             <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak <= Aman, > Bahaya</p>
-            <div class="flex overflow-hidden rounded-[8px] bg-[#E5E5EF]/60 dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-                <input type="number" name="batas_waspada" value="{{ $waspadaVal }}" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
-                <div class="bg-[#C8C8E1] dark:bg-[rgba(255,255,255,0.05)] px-4 py-[10px] text-black dark:text-white font-[800] text-[14px]">cm</div>
+            <div class="flex overflow-hidden rounded-[12px] bg-[#F9F9FB] dark:bg-[#2a2b36] border border-transparent focus-within:border-[#9292C5] focus-within:ring-2 focus-within:ring-[#9292C5]/20 transition-all duration-300">
+                <input type="number" name="batas_waspada" value="{{ $waspadaVal }}" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <div class="bg-[#9292C5] text-white px-[16px] py-[12px] font-[800] text-[14px] flex items-center">cm</div>
             </div>
         </div>
         <!-- Bahaya Input -->
-        <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm transition-colors duration-300">
+        <div class="border-[2px] border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1a1b24] rounded-[16px] p-[20px] shadow-sm hover:shadow-md hover:border-[#9292C5] transition-all duration-300">
             <h4 class="font-[800] text-[#e02424] mb-1">Bahaya</h4>
             <p class="text-[13px] font-[500] text-black dark:text-[#a5a5d1] mb-4">Jarak <= X cm</p>
-            <div class="flex overflow-hidden rounded-[8px] bg-[#E5E5EF]/60 dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-                <input type="number" name="batas_bahaya" value="{{ $bahayaVal }}" class="w-full bg-transparent p-[10px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
-                <div class="bg-[#C8C8E1] dark:bg-[rgba(255,255,255,0.05)] px-4 py-[10px] text-black dark:text-white font-[800] text-[14px]">cm</div>
+            <div class="flex overflow-hidden rounded-[12px] bg-[#F9F9FB] dark:bg-[#2a2b36] border border-transparent focus-within:border-[#9292C5] focus-within:ring-2 focus-within:ring-[#9292C5]/20 transition-all duration-300">
+                <input type="number" name="batas_bahaya" value="{{ $bahayaVal }}" class="w-full bg-transparent p-[12px] text-[15px] font-[800] text-black dark:text-white outline-none border-none">
+                <div class="bg-[#9292C5] text-white px-[16px] py-[12px] font-[800] text-[14px] flex items-center">cm</div>
             </div>
         </div>
     </div>
@@ -96,42 +110,161 @@
     </div>
 </form>
 
-<div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm flex-1 transition-colors duration-300">
-    <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white mb-[24px]">Konfigurasi Sensor</h3>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-[48px] mb-[32px]">
-        <div>
-            <div class="flex items-center gap-4 mb-2">
-                <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Tinggi Sensor (cm)</span>
-                <input type="number" value="20" class="bg-[#E5E5EF]/50 dark:bg-[#1a1b24] border-none outline-none rounded-full px-4 py-[6px] font-[800] text-[14px] w-[140px] text-black dark:text-white border border-transparent dark:border-[rgba(255,255,255,0.05)]">
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-[24px]">
+    <!-- Card Konfigurasi Sensor -->
+    <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm flex flex-col transition-colors duration-300 h-full animate-fade-in-up stagger-2">
+        <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white mb-[24px]">Konfigurasi Sensor</h3>
+        
+        <div class="flex flex-col gap-[24px] flex-1">
+            <div>
+                <div class="flex items-center justify-between gap-4 mb-2">
+                    <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Tinggi Wadah (cm)</span>
+                    <input type="number" value="20" class="bg-[#F9F9FB] dark:bg-[#1a1b24] outline-none rounded-[12px] px-[16px] py-[10px] font-[800] text-[14px] w-[100px] text-black dark:text-white border border-transparent shadow-sm hover:shadow-md hover:bg-[#F3F3F3] focus:border-[#9292C5] focus:ring-2 focus:ring-[#9292C5]/20 transition-all duration-300 text-center">
+                </div>
+                <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jarak dari sensor (atas) ke dasar wadah air.</p>
             </div>
-            <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jarak dari sensor ke dasar wadah air.</p>
+            <div>
+                <div class="flex items-center justify-between gap-4 mb-2">
+                    <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Interval Baca (menit)</span>
+                    <input type="number" value="10" class="bg-[#F9F9FB] dark:bg-[#1a1b24] outline-none rounded-[12px] px-[16px] py-[10px] font-[800] text-[14px] w-[100px] text-black dark:text-white border border-transparent shadow-sm hover:shadow-md hover:bg-[#F3F3F3] focus:border-[#9292C5] focus:ring-2 focus:ring-[#9292C5]/20 transition-all duration-300 text-center">
+                </div>
+                <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jeda waktu antar pembacaan data sensor.</p>
+            </div>
         </div>
-        <div>
-            <div class="flex items-center gap-4 mb-2">
-                <span class="font-[800] text-[14px] text-black dark:text-white whitespace-nowrap">Interval Baca (menit)</span>
-                <input type="number" value="10" class="bg-[#E5E5EF]/50 dark:bg-[#1a1b24] border-none outline-none rounded-full px-4 py-[6px] font-[800] text-[14px] w-[140px] text-black dark:text-white border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-            </div>
-            <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Jeda waktu antar pembacaan data.</p>
+
+        <div class="flex justify-end mt-[32px]">
+            <!-- Simpan Button -->
+            <button class="bg-[#9292C5] text-white px-[28px] py-[10px] rounded-[12px] font-bold text-[14px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_16px_rgba(146,146,197,0.35)] shrink-0">
+                Simpan Sensor
+            </button>
         </div>
     </div>
 
-    <div class="flex items-start justify-between">
-        <div class="flex items-start gap-4">
-            <!-- Toggle Switch -->
-            <div x-data="{ enabled: true }" @click="enabled = !enabled" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm mt-1 transition-colors duration-300" :class="enabled ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
-                <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="enabled ? 'right-[3px]' : 'left-[3px]'"></div>
+    <!-- Card Kontrol Aktuator -->
+    <div class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm flex flex-col transition-colors duration-300 h-full animate-fade-in-up stagger-3"
+         x-data="{
+             buzzer: {{ $actuatorStates['buzzer'] ? 'true' : 'false' }},
+             pompa: {{ $actuatorStates['pompa'] ? 'true' : 'false' }},
+             led: {{ $actuatorStates['led'] ? 'true' : 'false' }},
+             isSaving: false,
+             saveActuators() {
+                 this.isSaving = true;
+                 fetch('/api/actuators', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ buzzer: this.buzzer, pompa: this.pompa, led: this.led })
+                 })
+                 .then(res => res.json())
+                 .then(data => {
+                     this.isSaving = false;
+                 })
+                 .catch(err => {
+                     this.isSaving = false;
+                     console.error('Gagal menghubungi server!');
+                 });
+             }
+         }">
+        <h3 class="text-[22px] font-bold tracking-tight text-black dark:text-white mb-[24px]">Kontrol Aktuator</h3>
+        
+        <div class="flex flex-col gap-[20px] flex-1">
+            <div class="flex items-start gap-4 bg-white dark:bg-[#1a1b24] p-4 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm transition-colors duration-300">
+                <!-- Toggle Switch Buzzer -->
+                <div @click="buzzer = !buzzer; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm mt-1 transition-colors duration-300 shrink-0" :class="buzzer ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="buzzer ? 'right-[3px]' : 'left-[3px]'"></div>
+                </div>
+                <div>
+                    <p class="font-[800] text-[14px] text-black dark:text-white mb-1 transition-colors duration-300">Alarm Buzzer</p>
+                    <p class="text-[12px] font-[500] text-[#555] dark:text-[#a5a5d1] leading-relaxed transition-colors duration-300">Berbunyi otomatis saat bahaya.</p>
+                </div>
             </div>
-            <div>
-                <p class="font-[800] text-[14px] text-black dark:text-white mb-1">Aktifkan Alarm Buzzer</p>
-                <p class="text-[13px] font-[500] text-[#333] dark:text-[#a5a5d1]">Buzzer akan berbunyi otomatis saat status mencapai BAHAYA.</p>
+
+            <div class="flex items-start gap-4 bg-white dark:bg-[#1a1b24] p-4 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm transition-colors duration-300">
+                <!-- Toggle Switch Pompa -->
+                <div @click="pompa = !pompa; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm mt-1 transition-colors duration-300 shrink-0" :class="pompa ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="pompa ? 'right-[3px]' : 'left-[3px]'"></div>
+                </div>
+                <div>
+                    <p class="font-[800] text-[14px] text-black dark:text-white mb-1 transition-colors duration-300">Pompa Air</p>
+                    <p class="text-[12px] font-[500] text-[#555] dark:text-[#a5a5d1] leading-relaxed transition-colors duration-300">Menyedot air jika banjir.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-4 bg-white dark:bg-[#1a1b24] p-4 rounded-[16px] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] shadow-sm transition-colors duration-300">
+                <!-- Toggle Switch LED -->
+                <div @click="led = !led; saveActuators()" class="w-[42px] h-[24px] rounded-full relative cursor-pointer shadow-sm mt-1 transition-colors duration-300 shrink-0" :class="led ? 'bg-[#9292C5]' : 'bg-[#C8C8E1]'">
+                    <div class="w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300" :class="led ? 'right-[3px]' : 'left-[3px]'"></div>
+                </div>
+                <div>
+                    <p class="font-[800] text-[14px] text-black dark:text-white mb-1 transition-colors duration-300">Lampu LED</p>
+                    <p class="text-[12px] font-[500] text-[#555] dark:text-[#a5a5d1] leading-relaxed transition-colors duration-300">Isyarat visual status air.</p>
+                </div>
             </div>
         </div>
-        
-        <!-- Simpan Button -->
-        <button class="bg-[#9292C5] text-white px-[28px] py-[10px] rounded-[12px] font-bold text-[14px] hover:bg-[#8585b8] transition-all shadow-sm hover:shadow-[0_4px_16px_rgba(146,146,197,0.35)] shrink-0">
-            Simpan
-        </button>
     </div>
+</div>
+
+<!-- Modal Panduan & Rumus -->
+<template x-teleport="body">
+    <div x-show="showGuide" 
+         x-transition.opacity.duration.300ms
+         class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+         style="display: none;">
+        
+        <div class="absolute inset-0" @click="showGuide = false"></div>
+        
+        <div x-show="showGuide"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="relative bg-white dark:bg-[#20212a] w-full max-w-2xl rounded-[24px] p-[32px] shadow-2xl border border-transparent dark:border-[rgba(255,255,255,0.05)] z-10 flex flex-col max-h-[90vh] overflow-hidden">
+            
+            <div class="flex justify-between items-center mb-6 shrink-0">
+                <h3 class="text-[20px] font-bold text-black dark:text-white tracking-tight">Panduan Koneksi & Rumus</h3>
+                <button @click="showGuide = false" class="text-[#555] dark:text-[#a5a5d1] hover:text-[#e02424] transition-colors bg-transparent border-none p-1 cursor-pointer rounded-full hover:bg-gray-100 dark:hover:bg-[rgba(255,255,255,0.05)]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex flex-col gap-6 overflow-y-auto pr-2 pb-2" style="scrollbar-width: thin;">
+                <!-- Rumus -->
+                <div class="bg-[#F9F9FB] dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] rounded-[16px] p-[20px] shadow-sm">
+                    <p class="text-[16px] font-bold tracking-tight text-black dark:text-white mb-[8px]">Rumus Perhitungan</p>
+                    <p class="text-[13px] text-[#555] dark:text-[#a5a5d1] mb-[12px] italic">Mengukur jarak pantulan gelombang suara ke permukaan air</p>
+                    <div class="bg-[#e2f1e2] dark:bg-[rgba(34,197,94,0.1)] text-[#16a34a] dark:text-[#4ade80] px-4 py-3 rounded-[12px] font-[800] text-[14px] text-center border border-[#bbf7d0] dark:border-[rgba(34,197,94,0.2)]">
+                        Level Air = Tinggi Sensor – Jarak Terukur
+                    </div>
+                </div>
+
+                <!-- Panduan -->
+                <div class="bg-[#F9F9FB] dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] rounded-[16px] p-[20px] shadow-sm">
+                    <p class="text-[16px] font-bold tracking-tight text-black dark:text-white mb-[16px]">Panduan Koneksi NodeMCU</p>
+                    <div class="text-[13px] text-[#333] dark:text-[#d1d1d6] space-y-5">
+                        <div>
+                            <p class="font-[800] mb-2 text-black dark:text-white">Topologi Koneksi</p>
+                            <ol class="list-decimal pl-4 space-y-1">
+                                <li>Sensor HC-SR04 → NodeMCU ESP8266</li>
+                                <li>NodeMCU → WiFi Hotspot HP/Router</li>
+                                <li>Laptop (server) ← WiFi yang sama</li>
+                                <li>NodeMCU POST ke http://[IP_LAPTOP]:8000/api/sensor</li>
+                            </ol>
+                        </div>
+                        <div>
+                            <p class="font-[800] mb-2 text-black dark:text-white">Wiring HC-SR04</p>
+                            <div class="grid grid-cols-[100px__20px__1fr] space-y-1">
+                                <div class="font-[700]">VCC</div><div>→</div><div>5V (NodeMCU VIN)</div>
+                                <div class="font-[700]">GND</div><div>→</div><div>GND</div>
+                                <div class="font-[700]">TRIG</div><div>→</div><div>D1 (GPIO5)</div>
+                                <div class="font-[700]">ECHO</div><div>→</div><div>D2 (GPIO4) via Voltage Divider</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
 </div>
 @endsection

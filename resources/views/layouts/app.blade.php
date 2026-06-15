@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FloodGuard - @yield('title', 'Beranda')</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
@@ -13,16 +13,42 @@
         <script>
             tailwind.config = {
                 darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        }
+                    }
+                }
             }
         </script>
     @endif
     <style>
-        body { font-family: 'Poppins', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #9292C5; border-radius: 10px; }
         .dark ::-webkit-scrollbar-thumb { background: #9292C5; }
         ::-webkit-scrollbar-thumb:hover { background: #7b7bb2; }
+        
+        /* Text Selection (Drag) */
+        ::selection {
+            background-color: rgba(146, 146, 197, 0.4);
+            color: #111;
+        }
+        ::-moz-selection {
+            background-color: rgba(146, 146, 197, 0.4);
+            color: #111;
+        }
+        .dark ::selection {
+            background-color: rgba(146, 146, 197, 0.4);
+            color: #fff;
+        }
+        .dark ::-moz-selection {
+            background-color: rgba(146, 146, 197, 0.4);
+            color: #fff;
+        }
+
         /* Dropdown fade in */
         .dropdown-open { display: block; animation: fadeIn 0.15s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
@@ -43,6 +69,44 @@
         .animate-liquid {
             animation: liquid-wave 4s linear infinite;
         }
+        /* Modernisasi Interaksi (Warna Asli Dipertahankan) */
+        .modern-card {
+            transition: all 0.3s ease;
+        }
+        .modern-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .dark .modern-card:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+        /* Animasi Masuk Bergiliran */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0; /* Mulai dengan 0 sebelum animasi jalan */
+        }
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        /* Swup SPA Transitions */
+        .transition-fade {
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        html.is-animating .transition-fade {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        html.is-leaving .transition-fade {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
     </style>
     <!-- Library Eksternal (Chart.js / ApexCharts) -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -59,9 +123,23 @@
     <!-- Alpine JS for interactions -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
+    <!-- Flatpickr for Modern Datepicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+    
 
 </head>
-<body class="bg-[#E5E5EF] dark:bg-[#1a1b24] text-[#333] dark:text-[#d1d1d6] antialiased transition-colors duration-300">
+<body x-data="{ 
+          isDark: localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches) 
+      }"
+      @toggle-theme.window="
+          isDark = !isDark; 
+          localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+          if(isDark) { document.documentElement.classList.add('dark'); } 
+          else { document.documentElement.classList.remove('dark'); }
+      "
+      class="bg-[#E5E5EF] dark:bg-[#1a1b24] text-[#333] dark:text-[#d1d1d6] antialiased transition-colors duration-300">
     <div class="flex h-screen overflow-hidden w-full">
         
         <!-- Sidebar -->
@@ -69,43 +147,78 @@
             $currentRoute = request()->path(); // or Route::currentRouteName()
         @endphp
         
-        <aside class="w-[280px] bg-[#F3F3F3] dark:bg-[#20212a] flex flex-col sticky top-0 h-screen rounded-tr-[32px] rounded-br-[32px] overflow-hidden z-20 shrink-0 border-r border-transparent dark:border-[rgba(255,255,255,0.05)] transition-colors duration-300">
+        <aside class="w-[260px] bg-[#F3F3F3] dark:bg-[#20212a] flex flex-col sticky top-0 h-screen rounded-tr-[32px] rounded-br-[32px] overflow-hidden z-20 shrink-0 border-r border-transparent dark:border-[rgba(255,255,255,0.05)] transition-colors duration-300 shadow-[4px_0_32px_rgba(146,146,197,0.3)] dark:shadow-[4px_0_32px_rgba(0,0,0,0.5)]">
             <!-- Logo -->
             <div class="px-8 pt-[40px] pb-[40px] flex items-center justify-start">
-                <h1 class="text-[26px] font-bold text-[#9292C5] tracking-wide">FloodGuard</h1>
+                <a href="{{ route('dashboard') }}" class="block transition-transform hover:scale-105">
+                    <h1 class="text-[28px] text-[#9292C5] tracking-wide" style="font-weight: 300;">FloodGuard</h1>
+                </a>
             </div>
 
             <!-- Navigation menus -->
             <div class="flex-1 px-[20px] py-[16px] overflow-y-auto w-full">
-                <nav class="space-y-8 flex flex-col gap-[8px]">
+                <nav id="sidebar-menu" class="flex flex-col gap-[8px] relative" x-data="{
+                    activePath: window.location.pathname.replace(/^\/|\/$/g, '') || 'dashboard',
+                    pillTop: 0,
+                    pillHeight: 0,
+                    pillOpacity: 0,
+                    hasInitialized: false,
+                    movePill() {
+                        this.$nextTick(() => {
+                            const activeEl = this.$refs[this.activePath];
+                            if (activeEl) {
+                                this.pillTop = activeEl.offsetTop;
+                                this.pillHeight = activeEl.offsetHeight;
+                                this.pillOpacity = 1;
+                            } else {
+                                this.pillOpacity = 0;
+                            }
+                            if(!this.hasInitialized) {
+                                setTimeout(() => this.hasInitialized = true, 50);
+                            }
+                        });
+                    },
+                    init() {
+                        this.movePill();
+                    }
+                }" @swup:page-view.window="activePath = window.location.pathname.replace(/^\/|\/$/g, '') || 'dashboard'; movePill();">
+                    
+                    <!-- The Magic Sliding Pill -->
+                    <div class="absolute left-[-12px] right-[-12px] bg-[#9292C5] rounded-[16px] shadow-[0_8px_24px_rgba(146,146,197,0.6)] dark:shadow-[0_8px_24px_rgba(146,146,197,0.3)] z-0 pointer-events-none"
+                         style="transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);"
+                         :class="hasInitialized ? 'transition-all duration-500' : ''"
+                         :style="`top: ${pillTop}px; height: ${pillHeight}px; opacity: ${pillOpacity};`"></div>
+
+                    <!-- The Small Left Indicator Line -->
+                    <div class="absolute left-[-32px] w-[6px] bg-[#9292C5] rounded-r-[6px] z-0 pointer-events-none"
+                         style="transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);"
+                         :class="hasInitialized ? 'transition-all duration-500' : ''"
+                         :style="`top: ${pillTop + (pillHeight/2) - 17}px; height: 34px; opacity: ${pillOpacity};`"></div>
+
                     <div>
-                        <p class="px-[12px] text-[12px] font-bold text-[#9292C5] dark:text-[#a5a5d1] mb-[12px] tracking-widest uppercase opacity-80">Menu Utama</p>
+                        <p class="relative z-10 px-[12px] text-[12px] font-bold text-[#9292C5] dark:text-[#a5a5d1] mb-[12px] tracking-widest uppercase opacity-80">Menu Utama</p>
                         <ul class="space-y-[4px]">
-                            <li class="relative">
-                                <div class="absolute left-[-20px] top-1/2 transform -translate-y-1/2 w-[6px] h-[34px] bg-[#9292C5] rounded-r-[6px] transition-all duration-300 {{ $currentRoute == 'dashboard' ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0' }}"></div>
-                                <a href="/dashboard" class="w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all {{ $currentRoute == 'dashboard' ? 'bg-[#9292C5] text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100' }}">
-                                    <svg class="h-[22px] w-[22px]" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                            <li>
+                                <a href="/dashboard" x-ref="dashboard" @click="activePath = 'dashboard'; movePill()" class="relative z-10 w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all duration-300 transform hover:translate-x-1" :class="activePath === 'dashboard' ? 'text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100'">
+                                    <svg class="h-[22px] w-[22px] transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                                     Dashboard
                                 </a>
                             </li>
-                            <li class="relative">
-                                <div class="absolute left-[-20px] top-1/2 transform -translate-y-1/2 w-[6px] h-[34px] bg-[#9292C5] rounded-r-[6px] transition-all duration-300 {{ $currentRoute == 'peringatan' ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0' }}"></div>
-                                <a href="/peringatan" class="w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all {{ $currentRoute == 'peringatan' ? 'bg-[#9292C5] text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100' }}">
-                                    <svg class="h-[22px] w-[22px] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+                            <li>
+                                <a href="/peringatan" x-ref="peringatan" @click="activePath = 'peringatan'; movePill()" class="relative z-10 w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all duration-300 transform hover:translate-x-1" :class="activePath === 'peringatan' ? 'text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100'">
+                                    <svg class="h-[22px] w-[22px] shrink-0 transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
                                     Peringatan
                                 </a>
                             </li>
-                            <li class="relative">
-                                <div class="absolute left-[-20px] top-1/2 transform -translate-y-1/2 w-[6px] h-[34px] bg-[#9292C5] rounded-r-[6px] transition-all duration-300 {{ $currentRoute == 'perangkat' ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0' }}"></div>
-                                <a href="/perangkat" class="w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all {{ $currentRoute == 'perangkat' ? 'bg-[#9292C5] text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100' }}">
-                                    <svg class="h-[22px] w-[22px] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16H3v-2h18v2zm0-5H3V9h18v2zm0-5H3V4h18v2z"/></svg>
+                            <li>
+                                <a href="/perangkat" x-ref="perangkat" @click="activePath = 'perangkat'; movePill()" class="relative z-10 w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all duration-300 transform hover:translate-x-1" :class="activePath === 'perangkat' ? 'text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100'">
+                                    <svg class="h-[22px] w-[22px] shrink-0 transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16H3v-2h18v2zm0-5H3V9h18v2zm0-5H3V4h18v2z"/></svg>
                                     Perangkat
                                 </a>
                             </li>
-                            <li class="relative">
-                                <div class="absolute left-[-20px] top-1/2 transform -translate-y-1/2 w-[6px] h-[34px] bg-[#9292C5] rounded-r-[6px] transition-all duration-300 {{ $currentRoute == 'riwayat' ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0' }}"></div>
-                                <a href="/riwayat" class="w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all {{ $currentRoute == 'riwayat' ? 'bg-[#9292C5] text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100' }}">
-                                    <svg class="h-[22px] w-[22px] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                            <li>
+                                <a href="/riwayat" x-ref="riwayat" @click="activePath = 'riwayat'; movePill()" class="relative z-10 w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all duration-300 transform hover:translate-x-1" :class="activePath === 'riwayat' ? 'text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100'">
+                                    <svg class="h-[22px] w-[22px] shrink-0 transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                                     Riwayat Data
                                 </a>
                             </li>
@@ -113,12 +226,11 @@
                     </div>
 
                     <div class="mt-8">
-                        <p class="px-[12px] text-[12px] font-bold text-[#9292C5] dark:text-[#a5a5d1] mb-[12px] tracking-widest uppercase opacity-80">Konfigurasi</p>
+                        <p class="relative z-10 px-[12px] text-[12px] font-bold text-[#9292C5] dark:text-[#a5a5d1] mb-[12px] tracking-widest uppercase opacity-80">Konfigurasi</p>
                         <ul class="space-y-[4px]">
-                            <li class="relative">
-                                <div class="absolute left-[-20px] top-1/2 transform -translate-y-1/2 w-[6px] h-[34px] bg-[#9292C5] rounded-r-[6px] transition-all duration-300 {{ $currentRoute == 'pengaturan' ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0' }}"></div>
-                                <a href="/pengaturan" class="w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all {{ $currentRoute == 'pengaturan' ? 'bg-[#9292C5] text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100' }}">
-                                    <svg class="h-[22px] w-[22px] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                            <li>
+                                <a href="/pengaturan" x-ref="pengaturan" @click="activePath = 'pengaturan'; movePill()" class="relative z-10 w-full flex items-center gap-[16px] px-[16px] py-[12px] rounded-[16px] font-semibold text-[15px] transition-all duration-300 transform hover:translate-x-1" :class="activePath === 'pengaturan' ? 'text-white' : 'text-[#9292C5] dark:text-[#a5a5d1] hover:bg-[#9292C5]/10 dark:hover:bg-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100'">
+                                    <svg class="h-[22px] w-[22px] shrink-0 transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
                                     Pengaturan
                                 </a>
                             </li>
@@ -139,27 +251,29 @@
                 <!-- Logout icon -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="text-[#9292C5] dark:text-[#a5a5d1] hover:text-[#e02424] transition-colors ml-2 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-none p-0">
-                        <svg class="w-[20px] h-[20px]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3H9c-1.1 0-2 .9-2 2v3h2V5h11v14H9v-3H7v3c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                    <button type="submit" class="text-[#9292C5] dark:text-[#a5a5d1] hover:text-[#e02424] transition-all duration-300 ml-2 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-none p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transform hover:rotate-12">
+                        <svg class="w-[22px] h-[22px]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3H9c-1.1 0-2 .9-2 2v3h2V5h11v14H9v-3H7v3c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
                     </button>
                 </form>
             </div>
         </aside>
 
         <!-- Main Content Area -->
-        <main class="flex-1 w-full flex flex-col relative z-0 h-screen overflow-hidden">
-            
-            <div class="px-[32px] md:px-[40px] pt-[32px] flex-shrink-0 transition-colors duration-300">
+        <main class="flex-1 w-full flex flex-col relative z-0 h-screen overflow-y-auto overflow-x-hidden scroll-smooth">
+            <div class="max-w-[1440px] w-full mx-auto flex flex-col min-h-full">
+                
+                <div class="px-[24px] md:px-[32px] pt-[24px] flex-shrink-0 transition-colors duration-300">
                 <!-- Global Top Header -->
-                <header class="flex items-center justify-between bg-[#F3F3F3] dark:bg-[#20212a] rounded-[20px] px-[28px] py-[16px] mb-[24px] transition-colors duration-300 border border-transparent dark:border-[rgba(255,255,255,0.05)]">
-                    <h2 class="text-[22px] font-bold text-black dark:text-white tracking-tight">@yield('title')</h2>
+                <header class="flex items-center justify-between bg-[#F3F3F3] dark:bg-[#20212a] rounded-[24px] px-[24px] py-[16px] mb-[20px] transition-colors duration-300 border border-transparent dark:border-[rgba(255,255,255,0.05)] shadow-sm">
+                    <h2 id="page-title" class="text-[20px] font-bold text-black dark:text-white tracking-tight transition-fade">@yield('title')</h2>
                     
                     <div class="flex items-center gap-[20px] relative" x-data="{ open: false }">
                         
-                        <!-- Theme Toggle Script using Vanilla JS inline -->
-                        <button id="theme-toggle" class="w-[42px] h-[42px] bg-white dark:bg-[#2e2f3a] text-[#9292C5] dark:text-[#a5a5d1] rounded-[14px] flex items-center justify-center transition-all shadow-[0_4px_16px_rgba(146,146,197,0.35)] dark:shadow-[0_4px_16px_rgba(100,100,160,0.2)] hover:scale-105 cursor-pointer">
-                            <svg id="theme-toggle-dark-icon" class="w-[22px] h-[22px] hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                            <svg id="theme-toggle-light-icon" class="w-[22px] h-[22px] hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                        <!-- Theme Toggle Script using Alpine JS Event -->
+                        <button @click="$dispatch('toggle-theme')"
+                                class="relative overflow-hidden w-[42px] h-[42px] bg-white dark:bg-[#2e2f3a] text-[#9292C5] dark:text-[#a5a5d1] rounded-[14px] flex items-center justify-center transition-all shadow-[0_4px_16px_rgba(146,146,197,0.35)] dark:shadow-[0_4px_16px_rgba(100,100,160,0.2)] hover:scale-105 cursor-pointer z-50">
+                            <svg class="absolute w-[22px] h-[22px] transition-all duration-500 ease-in-out transform rotate-0 scale-100 opacity-100 dark:-rotate-90 dark:scale-0 dark:opacity-0 pointer-events-none" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                            <svg class="absolute w-[22px] h-[22px] transition-all duration-500 ease-in-out transform rotate-90 scale-0 opacity-0 dark:rotate-0 dark:scale-100 dark:opacity-100 pointer-events-none" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                         </button>
 
                         <!-- Aman Badge Indicator (Static) -->
@@ -170,53 +284,178 @@
                 </header>
             </div>
 
-            <!-- Content Area (Scrollable) -->
-            <div class="px-[32px] md:px-[40px] pb-[32px] flex-1 overflow-y-auto w-full transition-colors duration-300 relative z-0">
-                @yield('content')
+                <!-- Content Area -->
+                <div id="swup" class="transition-fade px-[24px] md:px-[32px] pb-[32px] w-full relative z-0 flex-1">
+                    @yield('content')
+                </div>
             </div>
-
         </main>
     </div>
 
-    <!-- Theme Script -->
+    <!-- Swup SPA Integration -->
+    <script src="https://unpkg.com/swup@4"></script>
     <script>
-        var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-        var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        document.addEventListener('DOMContentLoaded', () => {
+            const swup = new Swup({
+                containers: ['#swup', '#page-title'],
+                animationSelector: '[class*="transition-"]'
+            });
 
-        // Change the icons inside the button based on previous settings
-        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            themeToggleLightIcon.classList.remove('hidden');
-        } else {
-            themeToggleDarkIcon.classList.remove('hidden');
-        }
-
-        var themeToggleBtn = document.getElementById('theme-toggle');
-
-        themeToggleBtn.addEventListener('click', function() {
-            // toggle icons inside button
-            themeToggleDarkIcon.classList.toggle('hidden');
-            themeToggleLightIcon.classList.toggle('hidden');
-
-            // if set via local storage previously
-            if (localStorage.getItem('color-theme')) {
-                if (localStorage.getItem('color-theme') === 'light') {
+            // Restore dark mode class after Swup replaces the HTML
+            swup.hooks.on('page:view', () => {
+                if (localStorage.getItem('color-theme') === 'dark') {
                     document.documentElement.classList.add('dark');
-                    localStorage.setItem('color-theme', 'dark');
                 } else {
                     document.documentElement.classList.remove('dark');
-                    localStorage.setItem('color-theme', 'light');
                 }
-            } else {
-                // if NOT set via local storage previously
-                if (document.documentElement.classList.contains('dark')) {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.setItem('color-theme', 'light');
-                } else {
-                    document.documentElement.classList.add('dark');
-                    localStorage.setItem('color-theme', 'dark');
+            });
+        });
+        
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dashboardWidget', () => ({
+                open: false, 
+                device: {
+                    name: 'EWS 1',
+                    lokasi: 'Soekarno-Hatta',
+                    levelAir: 0,
+                    status: 'Menunggu',
+                    statusHujan: 'Cerah',
+                    terakhirUpdate: '...'
+                },
+                showToast: false,
+                toastTitle: '',
+                toastMessage: '',
+                toastBorderColor: 'border-[#e02424]',
+                toastIconBg: 'bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)]',
+                toastIconColor: 'text-[#c81e1e] dark:text-[#e02424]',
+                toastTitleColor: 'text-[#e02424]',
+                isOnline: true,
+                chartInstance: null,
+                chartData: [],
+                tick: 0,
+                lastStatus: null,
+                lastRainStatus: null,
+                getColor() {
+                    let status = this.device.status;
+                    if (status === 'Bahaya') return '#e02424';
+                    if (status === 'Waspada') return '#f59e0b';
+                    if (status === 'Menunggu') return '#9292C5';
+                    return '#6BBF6B';
+                },
+                getRainColor() {
+                    let status = this.device.statusHujan;
+                    if (status === 'Hujan') return '#9292C5';
+                    if (status === 'Menunggu') return '#9292C5';
+                    return '#6BBF6B';
+                },
+                init() {
+                    if ('Notification' in window && Notification.permission !== 'denied') {
+                        Notification.requestPermission();
+                    }
+
+                    this.$nextTick(() => {
+                        if (typeof ApexCharts === 'undefined') {
+                            console.error('ApexCharts library is not loaded!');
+                            return;
+                        }
+
+                        const isDark = document.documentElement.classList.contains('dark');
+                        const textColor = isDark ? '#a5a5d1' : '#9292C5';
+                        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                        
+                        var options = {
+                            series: [{ name: 'Jarak', data: [] }],
+                            chart: {
+                                type: 'area',
+                                height: 120,
+                                animations: { enabled: true, easing: 'linear', dynamicAnimation: { speed: 1000 } },
+                                toolbar: { show: false },
+                                zoom: { enabled: false },
+                                parentHeightOffset: 0
+                            },
+                            dataLabels: { enabled: false },
+                            stroke: { curve: 'smooth', width: 3, colors: ['#9292C5'] },
+                            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100], colorStops: [{ offset: 0, color: '#9292C5', opacity: 0.4 }, { offset: 100, color: '#9292C5', opacity: 0.05 }] } },
+                            xaxis: { type: 'numeric', range: 20, labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false }, tooltip: { enabled: false } },
+                            yaxis: { max: 400, min: 0, tickAmount: 4, labels: { style: { colors: textColor, fontWeight: 600, fontSize: '11px' }, formatter: function(val) { return Math.round(val) + 'cm'; } } },
+                            grid: { borderColor: gridColor, strokeDashArray: 4 },
+                            tooltip: { theme: isDark ? 'dark' : 'light' }
+                        };
+
+                        this.chartInstance = new ApexCharts(document.querySelector('#realtimeChart'), options);
+                        this.chartInstance.render();
+                    });
+
+                    const fetchSensor = () => {
+                        fetch('/data-sensor/latest')
+                            .then(res => res.json())
+                            .then(data => {
+                                let jarak = data.jarak || 0;
+                                jarak = Math.max(0, Math.min(400, parseFloat(jarak)));
+                                this.device.levelAir = Math.round(jarak);
+                                this.isOnline = true;
+                                this.device.status = data.status || 'Aman';
+                                this.device.statusHujan = data.hujan || 'Cerah';
+                                
+                                const triggerNotif = (title, message, colors) => {
+                                    this.toastTitle = title;
+                                    this.toastMessage = message;
+                                    this.toastBorderColor = colors.border;
+                                    this.toastIconBg = colors.iconBg;
+                                    this.toastIconColor = colors.iconColor;
+                                    this.toastTitleColor = colors.titleColor;
+                                    this.showToast = true;
+                                    setTimeout(() => { this.showToast = false; }, 8000);
+                                    if ('Notification' in window && Notification.permission === 'granted') {
+                                        new Notification(title, { body: message, icon: '/favicon.ico' });
+                                    }
+                                };
+
+                                if (this.device.status === 'Bahaya' && this.lastStatus !== 'Bahaya') {
+                                    triggerNotif('🚨 BAHAYA BANJIR!', `Air menyentuh level kritis (${jarak}cm)! Cuaca: ${this.device.statusHujan}. Segera ambil tindakan.`, {
+                                        border: 'border-[#e02424]', iconBg: 'bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.15)]', iconColor: 'text-[#c81e1e] dark:text-[#e02424]', titleColor: 'text-[#e02424]'
+                                    });
+                                } else if (this.device.status === 'Waspada' && this.lastStatus !== 'Waspada' && this.lastStatus !== 'Bahaya') {
+                                    triggerNotif('⚠️ SIAGA BANJIR!', `Air memasuki level waspada (${jarak}cm). Cuaca: ${this.device.statusHujan}. Harap berhati-hati.`, {
+                                        border: 'border-[#f59e0b]', iconBg: 'bg-[#fef3c7] dark:bg-[rgba(245,158,11,0.15)]', iconColor: 'text-[#d97706] dark:text-[#f59e0b]', titleColor: 'text-[#f59e0b]'
+                                    });
+                                } else if (this.device.statusHujan === 'Hujan' && this.lastRainStatus !== 'Hujan') {
+                                    triggerNotif('PERINGATAN CUACA!', `Terdeteksi hujan turun. Jarak Air: ${jarak}cm. Pantau terus ketinggian air.`, {
+                                        border: 'border-[#9292C5]', iconBg: 'bg-[#E5E5EF] dark:bg-[rgba(146,146,197,0.15)]', iconColor: 'text-[#7b7bb2] dark:text-[#9292C5]', titleColor: 'text-[#9292C5]'
+                                    });
+                                }
+                                
+                                this.lastStatus = this.device.status;
+                                this.lastRainStatus = this.device.statusHujan;
+
+                                this.tick++;
+                                this.chartData.push({ x: this.tick, y: jarak });
+                                if (this.chartData.length > 30) this.chartData.shift();
+                                if (this.chartInstance) {
+                                    this.chartInstance.updateSeries([{ name: 'Jarak', data: this.chartData }]);
+                                }
+                                
+                                let d = new Date();
+                                this.device.terakhirUpdate = d.getHours().toString().padStart(2, '0') + '.' + d.getMinutes().toString().padStart(2, '0');
+                            })
+                            .catch(err => {
+                                this.isOnline = false;
+                                console.error('Sensor fetch error:', err);
+                            });
+                    };
+                    
+                    fetchSensor();
+                    if(this._intervalId) clearInterval(this._intervalId);
+                    this._intervalId = setInterval(fetchSensor, 2000);
+                },
+                destroy() {
+                    if(this._intervalId) clearInterval(this._intervalId);
+                    if(this.chartInstance) {
+                        this.chartInstance.destroy();
+                        this.chartInstance = null;
+                    }
                 }
-            }
-            
+            }));
         });
     </script>
     
