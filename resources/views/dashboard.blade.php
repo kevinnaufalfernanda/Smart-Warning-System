@@ -156,7 +156,7 @@
                     $statusType = ucfirst(strtolower($notif->alert_level));
                     
                     $bgColor = $statusType === 'Bahaya' ? 'bg-[#e02424]' : ($statusType === 'Waspada' ? 'bg-[#D8C726]' : 'bg-[#6BBF6B]');
-                    $dateObj = \Carbon\Carbon::parse($notif->created_at)->setTimezone('Asia/Jakarta');
+                    $dateObj = \Carbon\Carbon::parse($notif->created_at, 'UTC')->setTimezone('Asia/Jakarta');
                     $timeStr = $dateObj->format('H:i') . ' WIB';
 
                     $jarakVal = '-';
@@ -310,15 +310,46 @@
                 if (status === 'Menunggu') return '#9292C5';
                 return '#6BBF6B';
             },
+            recalculateYAxis() {
+                if (!this.chartData || this.chartData.length === 0 || !this.chartInstance) return;
+                let maxDataVal = Math.max(...this.chartData.map(d => d.y));
+                let dynamicMax = 50;
+                if (maxDataVal <= 50) dynamicMax = 100;
+                else if (maxDataVal <= 100) dynamicMax = 200;
+                else dynamicMax = 400;
+                
+                if (this.lastDynamicMax !== dynamicMax) {
+                    this.chartInstance.updateOptions({ yaxis: { max: dynamicMax, min: 0, tickAmount: 2 } }, false, false);
+                    this.lastDynamicMax = dynamicMax;
+                }
+            },
             fetchChartHistory(range) {
                 if(this.currentRange === range) return;
                 this.currentRange = range;
                 
                 if(range === 'Live') {
-                    // Reset ke mode Live (Geser cepat 20 data)
-                    this.chartInstance.updateOptions({ xaxis: { range: {{ ($intervalMs > 0 ? $intervalMs : 2000) * 20 }} } });
-                    this.chartData = this.chartData.slice(-20);
-                    this.chartInstance.updateSeries([{ data: this.chartData }]);
+                    fetch(`/api/chart-history?range=live`)
+                        .then(res => res.json())
+                        .then(res => {
+                            if(res.data) {
+                                this.chartData = res.data;
+                                
+                                let maxDataVal = Math.max(...this.chartData.map(d => d.y));
+                                let dynamicMax = 50;
+                                if (maxDataVal <= 50) dynamicMax = 100;
+                                else if (maxDataVal <= 100) dynamicMax = 200;
+                                else dynamicMax = 400;
+                                this.lastDynamicMax = dynamicMax;
+                                
+                                this.chartInstance.updateOptions({ 
+                                    yaxis: { max: dynamicMax, min: 0, tickAmount: 2 },
+                                    xaxis: { range: {{ ($intervalMs > 0 ? $intervalMs : 2000) * 20 }} } 
+                                }, false, false);
+                                
+                                this.chartInstance.updateSeries([{ data: this.chartData }], false);
+                            }
+                        })
+                        .catch(e => console.error("Gagal menarik live history", e));
                     return;
                 }
                 
@@ -332,16 +363,20 @@
                         if(res.data) {
                             this.chartData = res.data;
                             
-                            // Hitung range ms
-                            let rangeMs;
-                            if(range === '1 Jam') rangeMs = 60 * 60 * 1000;
-                            else if(range === '5 Jam') rangeMs = 5 * 60 * 60 * 1000;
-                            else if(range === '1 Hari') rangeMs = 24 * 60 * 60 * 1000;
-                            else if(range === '1 Minggu') rangeMs = 7 * 24 * 60 * 60 * 1000;
-                            else if(range === '1 Bulan') rangeMs = 30 * 24 * 60 * 60 * 1000;
+                            // Kalkulasi sumbu Y
+                            let maxDataVal = Math.max(...this.chartData.map(d => d.y));
+                            let dynamicMax = 50;
+                            if (maxDataVal <= 50) dynamicMax = 100;
+                            else if (maxDataVal <= 100) dynamicMax = 200;
+                            else dynamicMax = 400;
+                            this.lastDynamicMax = dynamicMax;
                             
-                            // Update tanpa animasi khusus agar tidak flickering aneh saat ganti periode jauh
-                            this.chartInstance.updateOptions({ xaxis: { range: rangeMs } }, false, false);
+                            // Update opsi grafik sekaligus (Sumbu Y dan X) untuk mencegah overwrite
+                            this.chartInstance.updateOptions({ 
+                                yaxis: { max: dynamicMax, min: 0, tickAmount: 2 },
+                                xaxis: { min: undefined, max: undefined, range: undefined } 
+                            }, false, false);
+                            
                             this.chartInstance.updateSeries([{ data: this.chartData }], false);
                         }
                     })

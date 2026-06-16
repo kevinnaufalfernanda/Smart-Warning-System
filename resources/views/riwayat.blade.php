@@ -135,7 +135,7 @@
                     $statusLabel = $statusType === 'Waspada' ? 'Siaga' : $statusType;
                     
                     // Timezone correction
-                    $dateObj = \Carbon\Carbon::parse($row->created_at)->setTimezone('Asia/Jakarta');
+                    $dateObj = \Carbon\Carbon::parse($row->created_at, 'UTC')->setTimezone('Asia/Jakarta');
                     $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
                     $dateStr = $dateObj->format('d') . ' ' . $bulanIndo[$dateObj->format('n') - 1] . ' ' . $dateObj->format('Y');
                     $dateYmd = $dateObj->format('Y-m-d');

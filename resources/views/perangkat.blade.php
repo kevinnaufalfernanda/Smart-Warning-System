@@ -6,7 +6,7 @@
     $onlineCount = 0;
     foreach($devices as $d) {
         $lastLog = \App\Models\SensorLog::where('device_id', $d->id)->latest('created_at')->first();
-        if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
+        if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at, 'UTC')->diffInMinutes(now('UTC')) <= 1) {
             $onlineCount++;
         }
     }
@@ -48,7 +48,7 @@
                 // Cek status online berdasarkan log sensor terakhir (misal 5 menit terakhir)
                 $lastLog = \App\Models\SensorLog::where('device_id', $device->id)->latest('created_at')->first();
                 $isOnline = false;
-                if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
+                if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at, 'UTC')->diffInMinutes(now('UTC')) <= 1) {
                     $isOnline = true;
                 }
             @endphp
@@ -78,14 +78,17 @@
             </div>
             <div>
                 <p class="font-[800] text-black dark:text-white mb-[2px]">Terakhir Aktif</p>
-                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">{{ $lastLog ? \Carbon\Carbon::parse($lastLog->created_at)->diffForHumans() : 'Belum pernah terhubung' }}</p>
+                <p class="text-[#555] dark:text-[#a5a5d1] font-[500]">{{ $lastLog ? \Carbon\Carbon::parse($lastLog->created_at, 'UTC')->diffForHumans(now('UTC')) : 'Belum pernah terhubung' }}</p>
             </div>
         </div>
 
         <!-- Tombol Aksi -->
-        <div class="mt-[16px] flex gap-2">
+        <div class="mt-[16px] flex flex-col gap-2">
             <template x-if="!isEditing">
-                <button @click="isEditing = true" class="w-full bg-[#E5E5EF] dark:bg-[#2e2f3a] text-black dark:text-white font-bold py-1.5 rounded-[8px] text-[13px] hover:bg-[#D4D4E4] transition-colors">Edit Perangkat</button>
+                <div class="flex flex-col gap-2">
+                    <button @click="isEditing = true" class="w-full bg-[#E5E5EF] dark:bg-[#2e2f3a] text-black dark:text-white font-bold py-1.5 rounded-[8px] text-[13px] hover:bg-[#D4D4E4] transition-colors">Edit Perangkat</button>
+                    <button @click="hapusDevice({{ $device->id }})" class="w-full bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.1)] text-[#e02424] font-bold py-1.5 rounded-[8px] text-[13px] hover:bg-red-200 dark:hover:bg-[rgba(224,36,36,0.2)] transition-colors border border-transparent dark:border-[rgba(224,36,36,0.2)]">Hapus Perangkat</button>
+                </div>
             </template>
             <template x-if="isEditing">
                 <div class="flex gap-2 w-full">
@@ -173,7 +176,7 @@
                 @if(isset($errorLogs) && count($errorLogs) > 0)
                     @foreach($errorLogs as $log)
                     <tr class="border-b border-[#E5E5EF] dark:border-[rgba(255,255,255,0.02)] hover:bg-gray-50 dark:hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                        <td class="py-[16px] px-[20px] whitespace-nowrap">{{ \Carbon\Carbon::parse($log->created_at)->setTimezone('Asia/Jakarta')->format('d M Y H:i:s') }}</td>
+                        <td class="py-[16px] px-[20px] whitespace-nowrap">{{ \Carbon\Carbon::parse($log->created_at, 'UTC')->setTimezone('Asia/Jakarta')->format('d M Y H:i:s') }}</td>
                         <td class="py-[16px] px-[20px]">
                             <span class="bg-[#fde8e8] dark:bg-[rgba(224,36,36,0.1)] text-[#e02424] px-2 py-1 rounded-md text-[11px] font-[700]">
                                 {{ $log->error_type }}
@@ -216,6 +219,29 @@
             console.error('Error:', err);
             alert('Terjadi kesalahan saat menyimpan');
         });
+    }
+
+    function hapusDevice(id) {
+        if(confirm('Apakah Anda yakin ingin menghapus perangkat ini secara permanen? Seluruh data riwayat sensor dan threshold dari alat ini juga akan terhapus.')) {
+            fetch('/perangkat/' + id, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Gagal menghapus perangkat');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Terjadi kesalahan saat menghapus');
+            });
+        }
     }
 </script>
 @endpush

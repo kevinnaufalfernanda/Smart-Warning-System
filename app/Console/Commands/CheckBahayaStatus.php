@@ -28,13 +28,11 @@ class CheckBahayaStatus extends Command
      */
     public function handle()
     {
-        // Beri jeda 2 menit untuk mengecek data yang baru masuk
-        $satuMenitLalu = Carbon::now()->subMinutes(2)->format('Y-m-d H:i:s');
-        
-        $dataTerbaru = DB::table('sensor_logs')
-            ->where('created_at', '>=', $satuMenitLalu)
+        // Beri jeda 2 menit untuk mengecek data yang baru masuk (Menggunakan waktu DB agar tidak ada konflik zona waktu)
+        $dataTerbaru = DB::table('sensor_data')
+            ->where('created_at', '>=', DB::raw('NOW() - INTERVAL 2 MINUTE'))
             ->where(function ($query) {
-                $query->where('flood_status', 'BAHAYA')
+                $query->whereIn('flood_status', ['BAHAYA', 'WASPADA'])
                       ->orWhere('flood_condition', 'HUJAN');
             })
             ->latest('id')
@@ -47,9 +45,9 @@ class CheckBahayaStatus extends Command
 
             // Jika aplikasi menggunakan UTC, kita sesuaikan ke Asia/Jakarta untuk pesan Telegram
             try {
-                $waktu = Carbon::parse($dataTerbaru->created_at)
+                $waktu = Carbon::parse($dataTerbaru->created_at, 'UTC')
                     ->timezone('Asia/Jakarta')
-                    ->format('Y-m-d H:i:s');
+                    ->format('Y-m-d H:i:s') . ' WIB';
             } catch (\Exception $e) {
                 $waktu = $dataTerbaru->created_at;
             }

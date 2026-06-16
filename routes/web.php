@@ -59,7 +59,7 @@ Route::middleware('auth')->group(function () {
         $onlineCount = 0;
         foreach($devices as $d) {
             $lastLog = SensorLog::where('device_id', $d->id)->latest('created_at')->first();
-            if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at)->diffInMinutes(now()) <= 15) {
+            if ($lastLog && \Carbon\Carbon::parse($lastLog->created_at, 'UTC')->diffInMinutes(now('UTC')) <= 1) {
                 $onlineCount++;
             }
         }
@@ -167,6 +167,19 @@ Route::middleware('auth')->group(function () {
         return response()->json(['success' => true]);
     })->name('perangkat.update');
 
+    Route::delete('/perangkat/{id}', function ($id) {
+        $device = \App\Models\Device::findOrFail($id);
+        // Hapus data terkait terlebih dahulu agar tidak terjadi foreign key error
+        \App\Models\SensorLog::where('device_id', $device->id)->delete();
+        
+        if ($device->station) {
+            \App\Models\Threshold::where('station_id', $device->station->id)->delete();
+            $device->station->delete();
+        }
+        $device->delete();
+        return response()->json(['success' => true]);
+    })->name('perangkat.destroy');
+
     Route::get('/riwayat', function () {
         $riwayat = SensorLog::with('device.station')->orderBy('id', 'desc')->take(200)->get();
         
@@ -242,14 +255,19 @@ Route::middleware('auth')->group(function () {
         
         \App\Models\Threshold::create(['station_id' => $stationId, 'level_label' => 'BAHAYA', 'water_min_cm' => 0, 'water_max_cm' => $bahaya]);
         \App\Models\Threshold::create(['station_id' => $stationId, 'level_label' => 'WASPADA', 'water_min_cm' => $bahaya + 0.01, 'water_max_cm' => $waspada]);
-        \App\Models\Threshold::create(['station_id' => $stationId, 'level_label' => 'AMAN', 'water_min_cm' => $waspada + 0.01, 'water_max_cm' => 400]);
+        \App\Models\Threshold::create(['station_id' => $stationId, 'level_label' => 'AMAN', 'water_min_cm' => $waspada + 0.01, 'water_max_cm' => $aman > $waspada ? $aman : 400]);
 
-        return back()->with('success', 'Threshold berhasil diperbarui!');
+        return back()->with('success', 'Threshold berhasil diperbarui!')->with('last_station_id', $stationId);
     })->name('pengaturan.threshold');
 });
 
-Route::get('/data-sensor/latest', function () {
-    $data = SensorLog::latest('id')->first();
+Route::get('/data-sensor/latest', function (\Illuminate\Http\Request $request) {
+    $deviceId = $request->query('device_id');
+    $query = SensorLog::query();
+    if ($deviceId) {
+        $query->where('device_id', $deviceId);
+    }
+    $data = $query->latest('id')->first();
     
     $jarak = $data ? $data->distance_cm : 0;
     // flood_condition contains 'HUJAN' or 'CERAH'
@@ -272,9 +290,9 @@ Route::get('/data-sensor/latest', function () {
         'interval_baca' => 2
     ]);
     
-    // Sinkronisasi status online (15 menit seperti di halaman perangkat)
+    // Sinkronisasi status online (1 menit)
     $isOnline = false;
-    if ($data && \Carbon\Carbon::parse($data->created_at)->diffInMinutes(now()) <= 15) {
+    if ($data && \Carbon\Carbon::parse($data->created_at, 'UTC')->diffInMinutes(now('UTC')) <= 1) {
         $isOnline = true;
     }
     
@@ -282,6 +300,7 @@ Route::get('/data-sensor/latest', function () {
         'jarak' => $jarak,
         'hujan' => $kondisiHujan,
         'waktu' => $data ? $data->created_at : null,
+        'timestamp' => $data ? \Carbon\Carbon::parse($data->created_at, 'UTC')->timestamp * 1000 : now()->timestamp * 1000,
         'raw_pesan' => $rawPesan,
         'status' => $data ? ucfirst(strtolower($data->flood_status)) : 'Aman',
         'interval' => $sensorConfig['interval_baca'],
@@ -293,28 +312,33 @@ Route::get('/api/chart-history', function (\Illuminate\Http\Request $request) {
     $range = $request->query('range', '1h');
     
     $query = \App\Models\SensorLog::query();
-    $now = \Carbon\Carbon::now();
+    $nowUtc = \Carbon\Carbon::now('UTC');
     $modValue = 1;
+    $takeCount = 300;
     
     switch ($range) {
+        case 'live':
+            $modValue = 1;
+            $takeCount = 20;
+            break;
         case '1h':
-            $query->where('created_at', '>=', $now->copy()->subHour());
+            $query->where('created_at', '>=', $nowUtc->copy()->subHour());
             $modValue = 1; // Ambil semua
             break;
         case '5h':
-            $query->where('created_at', '>=', $now->copy()->subHours(5));
+            $query->where('created_at', '>=', $nowUtc->copy()->subHours(5));
             $modValue = 5; // Sampling tiap 5 data
             break;
         case '1d':
-            $query->where('created_at', '>=', $now->copy()->subDay());
+            $query->where('created_at', '>=', $nowUtc->copy()->subDay());
             $modValue = 20; // Sampling tiap 20 data
             break;
         case '1w':
-            $query->where('created_at', '>=', $now->copy()->subWeek());
+            $query->where('created_at', '>=', $nowUtc->copy()->subWeek());
             $modValue = 100;
             break;
         case '1m':
-            $query->where('created_at', '>=', $now->copy()->subMonth());
+            $query->where('created_at', '>=', $nowUtc->copy()->subMonth());
             $modValue = 400;
             break;
         case 'all':
@@ -328,14 +352,15 @@ Route::get('/api/chart-history', function (\Illuminate\Http\Request $request) {
         $query->whereRaw('id % ? = 0', [$modValue]);
     }
     
-    $sensorHistory = $query->orderBy('id', 'desc')->take(300)->get()->reverse()->values();
+    $sensorHistory = $query->orderBy('id', 'desc')->take($takeCount)->get()->reverse()->values();
     
     $historyData = $sensorHistory->map(function($log) use ($range) {
-        $format = in_array($range, ['1h', '5h']) ? 'H:i:s' : 'd M, H:i';
+        $format = in_array($range, ['1h', '5h', 'live']) ? 'H:i:s' : 'd M, H:i';
+        $dateObj = \Carbon\Carbon::parse($log->created_at, 'UTC')->setTimezone('Asia/Jakarta');
         return [
-            'x' => \Carbon\Carbon::parse($log->created_at)->timestamp * 1000,
+            'x' => $dateObj->timestamp * 1000,
             'y' => $log->distance_cm,
-            'metaTime' => \Carbon\Carbon::parse($log->created_at)->format($format)
+            'metaTime' => $dateObj->format($format)
         ];
     });
     

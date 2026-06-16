@@ -263,10 +263,47 @@
                             <svg class="absolute w-[22px] h-[22px] transition-all duration-500 ease-in-out transform rotate-90 scale-0 opacity-0 dark:rotate-0 dark:scale-100 dark:opacity-100 pointer-events-none" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                         </button>
 
-                        <!-- Aman Badge Indicator (Static) -->
-                        <div class="px-[24px] py-[8px] bg-white dark:bg-[#344034] rounded-[14px] font-bold text-[#22c55e] tracking-wide text-[16px] select-none flex items-center gap-2 shadow-[0_4px_16px_rgba(34,197,94,0.4)] animate-pulse-green" title="Sistem Berjalan Normal">
-                            Aman
+                        <!-- System Status Badge -->
+                        @php
+                            $latestLog = \App\Models\SensorLog::latest('created_at')->first();
+                            $isSystemOnline = $latestLog && \Carbon\Carbon::parse($latestLog->created_at, 'UTC')->diffInMinutes(now('UTC')) <= 1;
+                            
+                            $statusLabel = 'Aman';
+                            $statusColor = 'text-[#22c55e]';
+                            $statusBg = 'bg-white dark:bg-[#344034]';
+                            $shadowColor = 'shadow-[0_4px_16px_rgba(34,197,94,0.4)]';
+                            $dotColor = 'bg-[#22c55e]';
+                            $animateClass = 'animate-pulse-green';
+                            
+                            if ($isSystemOnline) {
+                                $statusLabel = ucfirst(strtolower($latestLog->flood_status ?? 'Aman'));
+                                
+                                if (strtoupper($statusLabel) == 'BAHAYA') {
+                                    $statusColor = 'text-[#e02424]';
+                                    $statusBg = 'bg-[#fde8e8] dark:bg-[#402929]';
+                                    $shadowColor = 'shadow-[0_4px_16px_rgba(224,36,36,0.4)]';
+                                    $dotColor = 'bg-[#e02424]';
+                                    $animateClass = 'animate-pulse';
+                                } elseif (strtoupper($statusLabel) == 'WASPADA' || strtoupper($statusLabel) == 'SIAGA') {
+                                    $statusColor = 'text-[#eab308]';
+                                    $statusBg = 'bg-[#fef9c3] dark:bg-[#423826]';
+                                    $shadowColor = 'shadow-[0_4px_16px_rgba(234,179,8,0.4)]';
+                                    $dotColor = 'bg-[#eab308]';
+                                    $animateClass = 'animate-pulse';
+                                }
+                            }
+                        @endphp
+                        @if($isSystemOnline)
+                        <div class="px-[24px] py-[8px] {{ $statusBg }} rounded-[14px] font-bold {{ $statusColor }} tracking-wide text-[16px] select-none flex items-center gap-2 {{ $shadowColor }} {{ $animateClass }}" title="Status Banjir: {{ $statusLabel }}">
+                            <div class="w-[8px] h-[8px] rounded-full {{ $dotColor }}"></div>
+                            {{ $statusLabel }}
                         </div>
+                        @else
+                        <div class="px-[24px] py-[8px] bg-white dark:bg-[#402929] rounded-[14px] font-bold text-[#e02424] tracking-wide text-[16px] select-none flex items-center gap-2 shadow-[0_4px_16px_rgba(224,36,36,0.4)]" title="Sistem Terputus / Offline">
+                            <div class="w-[8px] h-[8px] rounded-full bg-[#e02424]"></div>
+                            Offline
+                        </div>
+                        @endif
                     </div>
                 </header>
             </div>

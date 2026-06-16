@@ -3,7 +3,16 @@
 
 @section('content')
 @php
-    $selectedStation = $stations->first();
+    $lastStationId = session('last_station_id');
+    $selectedStation = null;
+    
+    if ($lastStationId) {
+        $selectedStation = $stations->where('id', $lastStationId)->first();
+    }
+    if (!$selectedStation) {
+        $selectedStation = $stations->first();
+    }
+    
     // Default values
     $amanVal = 12;
     $waspadaVal = 12;
@@ -12,21 +21,57 @@
     if ($selectedStation && $selectedStation->thresholds->count() > 0) {
         $bahaya = $selectedStation->thresholds->where('level_label', 'BAHAYA')->first();
         $waspada = $selectedStation->thresholds->where('level_label', 'WASPADA')->first();
+        $aman = $selectedStation->thresholds->where('level_label', 'AMAN')->first();
         if ($bahaya) $bahayaVal = $bahaya->water_max_cm;
         if ($waspada) $waspadaVal = $waspada->water_max_cm;
-        // Aman's threshold isn't really needed for input since it's just > waspadaVal
-        $amanVal = $waspadaVal; 
+        if ($aman && $aman->water_max_cm != 400) {
+            $amanVal = $aman->water_max_cm;
+        } else {
+            $amanVal = $waspadaVal; 
+        }
     }
+
+    $stationsData = $stations->map(function($st) {
+        $b = 8; $w = 12; $a = 12;
+        if ($st->thresholds->count() > 0) {
+            $bh = $st->thresholds->where('level_label', 'BAHAYA')->first();
+            $ws = $st->thresholds->where('level_label', 'WASPADA')->first();
+            $am = $st->thresholds->where('level_label', 'AMAN')->first();
+            if ($bh) $b = $bh->water_max_cm;
+            if ($ws) {
+                $w = $ws->water_max_cm;
+                $a = $w;
+            }
+            if ($am && $am->water_max_cm != 400) {
+                $a = $am->water_max_cm;
+            }
+        }
+        return [
+            'id' => $st->id,
+            'name' => $st->name,
+            'bahaya' => $b,
+            'waspada' => $w,
+            'aman' => $a
+        ];
+    })->keyBy('id')->toArray();
 @endphp
 
 <div x-data="{ 
     showGuide: false, 
+    stationsData: {{ json_encode($stationsData) }},
     amanVal: {{ $amanVal }}, 
     waspadaVal: {{ $waspadaVal }}, 
     bahayaVal: {{ $bahayaVal }},
     get totalVal() { 
         let sum = (Number(this.amanVal) || 0) + (Number(this.waspadaVal) || 0) + (Number(this.bahayaVal) || 0);
         return sum === 0 ? 1 : sum;
+    },
+    updateThresholds(stationId) {
+        if(this.stationsData[stationId]) {
+            this.amanVal = this.stationsData[stationId].aman;
+            this.waspadaVal = this.stationsData[stationId].waspada;
+            this.bahayaVal = this.stationsData[stationId].bahaya;
+        }
     }
 }" class="h-full">
 <form action="{{ route('pengaturan.threshold') }}" method="POST" class="bg-[#F3F3F3] dark:bg-[#20212a] border border-transparent dark:border-[rgba(255,255,255,0.05)] rounded-[24px] p-[32px] shadow-sm mb-[24px] transition-colors duration-300 animate-fade-in-up stagger-1">
@@ -61,7 +106,7 @@
             </button>
             <div x-show="dropdownOpen" x-transition class="absolute right-0 top-full mt-2 w-full min-w-[140px] bg-white dark:bg-[#1a1b24] border border-[#E5E5EF] dark:border-[rgba(255,255,255,0.05)] rounded-[16px] shadow-lg py-2 z-50">
                 @foreach($stations as $station)
-                <button type="button" @click="selectedStationId = '{{ $station->id }}'; selectedStationName = '{{ $station->name }}'; dropdownOpen = false" class="w-full text-left px-[20px] py-[8px] text-[13px] font-[600] text-[#555] dark:text-[#a5a5d1] hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+                <button type="button" @click="selectedStationId = '{{ $station->id }}'; selectedStationName = '{{ $station->name }}'; updateThresholds('{{ $station->id }}'); dropdownOpen = false" class="w-full text-left px-[20px] py-[8px] text-[13px] font-[600] text-[#555] dark:text-[#a5a5d1] hover:bg-[#F3F3F3] dark:hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                     {{ $station->name }}
                 </button>
                 @endforeach

@@ -102,7 +102,7 @@
                     if (!in_array($statusType, ['Bahaya', 'Waspada', 'Aman'])) $statusType = 'Aman';
                     
                     // Timezone correction
-                    $dateObj = \Carbon\Carbon::parse($row->created_at)->setTimezone('Asia/Jakarta');
+                    $dateObj = \Carbon\Carbon::parse($row->created_at, 'UTC')->setTimezone('Asia/Jakarta');
                     $dateStr = $dateObj->format('H.i');
                     $statusLabel = $statusType === 'Waspada' ? 'Siaga' : $statusType;
                     
